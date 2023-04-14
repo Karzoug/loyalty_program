@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os/signal"
+	"syscall"
 
 	"github.com/Karzoug/loyalty_program/internal/config"
+	"github.com/Karzoug/loyalty_program/internal/delivery/rest"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/sync/errgroup"
 )
 
 type buildLoggerConfig interface {
@@ -13,6 +18,9 @@ type buildLoggerConfig interface {
 }
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
+
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("Read config error: %s", err)
@@ -23,6 +31,19 @@ func main() {
 		log.Fatalf("Create logger error: %s", err)
 	}
 	defer logger.Sync()
+
+	g, _ := errgroup.WithContext(ctx)
+
+	server := rest.New(cfg, logger)
+	g.Go(func() error {
+		err := server.Run(ctx)
+		if err != nil {
+			logger.Error("Server shutdown failed", zap.Error(err))
+		}
+		return err
+	})
+
+	g.Wait()
 }
 
 func buildLogger(cfg buildLoggerConfig) (*zap.Logger, error) {

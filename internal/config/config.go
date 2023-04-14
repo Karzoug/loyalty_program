@@ -35,7 +35,11 @@ func Read() (*config, error) {
 	if err := c.readEnvs(); err != nil {
 		return nil, e.Wrap("read environment values", err)
 	}
-	return nil, c.validate()
+	if err := c.validate(); err != nil {
+		return nil, e.Wrap("no valid config values", err)
+	}
+
+	return &c, nil
 }
 
 // RunAddress is a rest server address and port.

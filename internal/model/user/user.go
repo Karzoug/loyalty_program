@@ -29,3 +29,7 @@ func New(login, password string) (*User, error) {
 		Balance:           decimal.Decimal{},
 	}, nil
 }
+
+func (u User) VerifyPassword(psw string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(u.EncryptedPassword), []byte(psw)) == nil
+}

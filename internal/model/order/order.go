@@ -6,8 +6,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type Number string
-
 type Order struct {
 	Number    Number
 	UserLogin string
@@ -26,6 +24,10 @@ func New(number Number, userLogin string) (*Order, error) {
 		Accrual:   decimal.Decimal{},
 
 		UploadedAt: time.Now().UTC(),
+	}
+
+	if !order.Number.Valid() {
+		return nil, ErrInvalidOrderNumber
 	}
 
 	return &order, nil

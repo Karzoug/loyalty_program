@@ -22,5 +22,9 @@ func New(userLogin string, orderNumber order.Number, sum decimal.Decimal) (*With
 		UserLogin:   userLogin,
 	}
 
+	if !w.OrderNumber.Valid() {
+		return nil, order.ErrInvalidOrderNumber
+	}
+
 	return &w, nil
 }

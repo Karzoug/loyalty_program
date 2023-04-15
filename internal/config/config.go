@@ -68,8 +68,8 @@ func (c config) SecretKey() string {
 }
 
 // IsDebugMode indicates whether the service is running in debug mode.
-func (s config) IsDebugMode() bool {
-	return s.debug
+func (c config) IsDebugMode() bool {
+	return c.debug
 }
 
 func (c *config) readFlags() {

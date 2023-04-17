@@ -6,26 +6,35 @@ import (
 	"time"
 
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest/middleware"
+	"github.com/Karzoug/loyalty_program/internal/service"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth"
 	"go.uber.org/zap"
+)
+
+const (
+	handlerTimeout = 5 * time.Second
 )
 
 type serverConfig interface {
 	RunAddress() string
+	SecretKey() string
 }
 
 type server struct {
-	cfg    serverConfig
-	logger *zap.Logger
+	cfg     serverConfig
+	logger  *zap.Logger
+	service *service.Service
 
 	server *http.Server
 }
 
-func New(cfg serverConfig, logger *zap.Logger) server {
+func New(cfg serverConfig, service *service.Service, logger *zap.Logger) server {
 	return server{
-		cfg:    cfg,
-		logger: logger,
+		cfg:     cfg,
+		logger:  logger,
+		service: service,
 
 		server: &http.Server{Addr: cfg.RunAddress()},
 	}
@@ -60,11 +69,15 @@ func (s *server) newRouter() chi.Router {
 	r.Post("/api/user/register", s.registerUserHandler)
 	r.Post("/api/user/login", s.loginUserHandler)
 
-	r.Post("/api/user/orders", s.createOrderHandler)
-	r.Get("/api/user/orders", s.listUserOrdersHandler)
-	r.Get("/api/user/balance", s.getUserBalanceHandler)
-	r.Post("/api/user/balance/withdraw", s.createWithdrawHandler)
-	r.Get("/api/user/withdrawals", s.listUserWithdrawalsHandler)
+	r.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verify(jwtauth.New("HS256", []byte(s.cfg.SecretKey()), nil), jwtauth.TokenFromHeader))
+		r.Use(jwtauth.Authenticator)
+		r.Post("/api/user/orders", s.createOrderHandler)
+		r.Get("/api/user/orders", s.listUserOrdersHandler)
+		r.Get("/api/user/balance", s.getUserBalanceHandler)
+		r.Post("/api/user/balance/withdraw", s.createWithdrawHandler)
+		r.Get("/api/user/withdrawals", s.listUserWithdrawalsHandler)
+	})
 
 	return r
 }

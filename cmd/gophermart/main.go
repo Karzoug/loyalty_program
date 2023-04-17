@@ -8,6 +8,8 @@ import (
 
 	"github.com/Karzoug/loyalty_program/internal/config"
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest"
+	"github.com/Karzoug/loyalty_program/internal/repository/storage/memory"
+	"github.com/Karzoug/loyalty_program/internal/service"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
@@ -32,9 +34,13 @@ func main() {
 	}
 	defer logger.Sync()
 
+	storages := memory.NewStorages()
+
+	service := service.New(storages, logger)
+
 	g, _ := errgroup.WithContext(ctx)
 
-	server := rest.New(cfg, logger)
+	server := rest.New(cfg, service, logger)
 	g.Go(func() error {
 		err := server.Run(ctx)
 		if err != nil {

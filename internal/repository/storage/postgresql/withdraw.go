@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/model/withdraw"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 	"github.com/jackc/pgx/v5"
@@ -50,7 +51,7 @@ func (s WithdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw)
 
 	return nil
 }
-func (s WithdrawStorage) GetByUser(ctx context.Context, login string) ([]withdraw.Withdraw, error) {
+func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
 	rows, err := s.connection().Query(ctx,
 		`SELECT order_number, sum, processed_at FROM withdrawals WHERE user_login = $1`, login)
 	if err != nil {

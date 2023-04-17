@@ -9,13 +9,17 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (s *Service) RegisterUser(ctx context.Context, login, password string) (*user.User, error) {
+func (s *Service) RegisterUser(ctx context.Context, login user.Login, password string) (*user.User, error) {
 	u, err := user.New(login, password)
 	if err != nil {
-		if errors.Is(err, user.ErrBadPassword) {
+		switch {
+		case errors.Is(err, user.ErrBadPassword):
 			return nil, ErrInvalidPasswordFormat
+		case errors.Is(err, user.ErrInvalidLogin):
+			return nil, ErrInvalidLoginFormat
+		default:
+			return nil, err
 		}
-		return nil, err
 	}
 
 	err = s.storages.User().Create(ctx, *u)
@@ -28,7 +32,7 @@ func (s *Service) RegisterUser(ctx context.Context, login, password string) (*us
 	return u, nil
 }
 
-func (s *Service) LoginUser(ctx context.Context, login, password string) (*user.User, error) {
+func (s *Service) LoginUser(ctx context.Context, login user.Login, password string) (*user.User, error) {
 	u, err := s.storages.User().Get(ctx, login)
 	if err != nil {
 		if errors.Is(err, storage.ErrRecordNotFound) {
@@ -43,7 +47,7 @@ func (s *Service) LoginUser(ctx context.Context, login, password string) (*user.
 	return u, nil
 }
 
-func (s *Service) GetUserBalance(ctx context.Context, login string) (*decimal.Decimal, error) {
+func (s *Service) GetUserBalance(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
 	u, err := s.storages.User().Get(ctx, login)
 	if err != nil {
 		if errors.Is(err, storage.ErrRecordNotFound) {

@@ -1,11 +1,17 @@
 package service
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/Karzoug/loyalty_program/internal/model/user"
+)
 
 var (
 	ErrLoginAlreadyExists    = errors.New("login already exists")
 	ErrInsufficientBalance   = errors.New("insufficient balance")
-	ErrInvalidPasswordFormat = errors.New("invalid password format: must not be longer than 72 ASCII characters")
+	ErrInvalidLoginFormat    = fmt.Errorf("invalid login format: must be not more than %d UTF-8 characters", user.MaxRuneCountInLogin)
+	ErrInvalidPasswordFormat = errors.New("invalid password format: must not exceed 72 bytes UTF-8 characters")
 	ErrInvalidAuthData       = errors.New("invalid login and/or password and/or token")
 
 	ErrInvalidOrderNumber     = errors.New("invalid order number")

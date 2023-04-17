@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrInvalidOrderNumber = errors.New("invalid order number")
+	ErrInvalidNumber = errors.New("invalid order number")
 )
 
 type Number string

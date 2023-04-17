@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
+	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 )
 
@@ -53,7 +54,7 @@ func (s OrderStorage) Get(ctx context.Context, number order.Number) (*order.Orde
 
 	return &o, nil
 }
-func (s OrderStorage) GetByUser(ctx context.Context, login string) ([]order.Order, error) {
+func (s OrderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.Order, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

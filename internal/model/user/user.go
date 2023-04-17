@@ -8,19 +8,23 @@ import (
 )
 
 var (
-	ErrBadPassword = errors.New("bad password")
+	ErrBadPassword = errors.New("bad password: too long (> 72 bytes)")
 )
 
 type User struct {
-	Login             string
+	Login             Login
 	EncryptedPassword string
 	Balance           decimal.Decimal
 }
 
-func New(login, password string) (*User, error) {
+func New(login Login, password string) (*User, error) {
 	encpw, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, ErrBadPassword
+	}
+
+	if !login.Valid() {
+		return nil, ErrInvalidLogin
 	}
 
 	return &User{

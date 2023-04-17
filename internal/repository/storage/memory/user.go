@@ -12,13 +12,13 @@ import (
 var _ storage.User = (*UserStorage)(nil)
 
 type UserStorage struct {
-	users map[string]user.User
+	users map[user.Login]user.User
 	mu    *sync.RWMutex
 }
 
 func NewUserStorage() *UserStorage {
 	return &UserStorage{
-		users: make(map[string]user.User),
+		users: make(map[user.Login]user.User),
 		mu:    &sync.RWMutex{},
 	}
 }
@@ -40,7 +40,7 @@ func (s UserStorage) Create(ctx context.Context, user user.User) error {
 	return nil
 }
 
-func (s UserStorage) UpdateBalance(ctx context.Context, login string, delta decimal.Decimal) (*decimal.Decimal, error) {
+func (s UserStorage) UpdateBalance(ctx context.Context, login user.Login, delta decimal.Decimal) (*decimal.Decimal, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s UserStorage) UpdateBalance(ctx context.Context, login string, delta deci
 	return &u.Balance, nil
 }
 
-func (s UserStorage) Get(ctx context.Context, login string) (*user.User, error) {
+func (s UserStorage) Get(ctx context.Context, login user.Login) (*user.User, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

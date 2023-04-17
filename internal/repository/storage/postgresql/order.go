@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
+	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 
 	"github.com/jackc/pgx/v5"
@@ -67,7 +68,7 @@ func (s OrderStorage) Get(ctx context.Context, number order.Number) (*order.Orde
 	return &order, nil
 }
 
-func (s OrderStorage) GetByUser(ctx context.Context, login string) ([]order.Order, error) {
+func (s OrderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.Order, error) {
 	rows, err := s.connection().Query(ctx,
 		`SELECT number, status, accrual, uploaded_at FROM orders WHERE user_login = $1`, login)
 	if err != nil {

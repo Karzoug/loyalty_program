@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
+	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/model/withdraw"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 )
@@ -40,7 +41,7 @@ func (s WithdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw)
 	return nil
 }
 
-func (s WithdrawStorage) GetByUser(ctx context.Context, login string) ([]withdraw.Withdraw, error) {
+func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

@@ -5,21 +5,22 @@ import (
 	"errors"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
+	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/model/withdraw"
 	"github.com/shopspring/decimal"
 )
 
-func (s *Service) CreateWithdraw(ctx context.Context, userLogin string, orderNumber order.Number, sum decimal.Decimal) (*withdraw.Withdraw, error) {
-	w, err := withdraw.New(userLogin, orderNumber, sum)
+func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNumber order.Number, sum decimal.Decimal) (*withdraw.Withdraw, error) {
+	w, err := withdraw.New(login, orderNumber, sum)
 	if err != nil {
-		if errors.Is(err, order.ErrInvalidOrderNumber) {
+		if errors.Is(err, order.ErrInvalidNumber) {
 			return nil, ErrInvalidOrderNumber
 		}
 		return nil, err
 	}
 
 	// TODO: add transaction
-	result, err := s.storages.User().UpdateBalance(ctx, userLogin, sum.Neg())
+	result, err := s.storages.User().UpdateBalance(ctx, login, sum.Neg())
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +40,8 @@ func (s *Service) CreateWithdraw(ctx context.Context, userLogin string, orderNum
 	return w, nil
 }
 
-func (s *Service) ListUserWithdrawals(ctx context.Context, userLogin string) ([]withdraw.Withdraw, error) {
-	ws, err := s.storages.Withdraw().GetByUser(ctx, userLogin)
+func (s *Service) ListUserWithdrawals(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
+	ws, err := s.storages.Withdraw().GetByUser(ctx, login)
 	if err != nil {
 		return nil, err
 	}

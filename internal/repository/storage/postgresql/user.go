@@ -53,7 +53,7 @@ func (s UserStorage) Create(ctx context.Context, user user.User) error {
 	return nil
 }
 
-func (s UserStorage) UpdateBalance(ctx context.Context, login string, delta decimal.Decimal) (*decimal.Decimal, error) {
+func (s UserStorage) UpdateBalance(ctx context.Context, login user.Login, delta decimal.Decimal) (*decimal.Decimal, error) {
 	var balance decimal.Decimal
 	err := s.connection().QueryRow(ctx,
 		`UPDATE users SET balance = balance + ($1) WHERE login = $2 RETURNING balance`,
@@ -68,7 +68,7 @@ func (s UserStorage) UpdateBalance(ctx context.Context, login string, delta deci
 	return &balance, nil
 }
 
-func (s UserStorage) Get(ctx context.Context, login string) (*user.User, error) {
+func (s UserStorage) Get(ctx context.Context, login user.Login) (*user.User, error) {
 	user := user.User{Login: login}
 	err := s.connection().QueryRow(ctx,
 		`SELECT encrypted_password, balance FROM users WHERE login = $1`, login).

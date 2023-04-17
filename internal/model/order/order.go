@@ -3,12 +3,13 @@ package order
 import (
 	"time"
 
+	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/shopspring/decimal"
 )
 
 type Order struct {
 	Number    Number
-	UserLogin string
+	UserLogin user.Login
 	Status    status
 	Accrual   decimal.Decimal
 
@@ -16,10 +17,14 @@ type Order struct {
 }
 
 // New creates a new Order, ready to be processed and inserted into repository.
-func New(number Number, userLogin string) (*Order, error) {
+func New(number Number, login user.Login) (*Order, error) {
+	if !login.Valid() {
+		return nil, user.ErrInvalidLogin
+	}
+
 	order := Order{
 		Number:    number,
-		UserLogin: userLogin,
+		UserLogin: login,
 		Status:    StatusNew,
 		Accrual:   decimal.Decimal{},
 
@@ -27,7 +32,7 @@ func New(number Number, userLogin string) (*Order, error) {
 	}
 
 	if !order.Number.Valid() {
-		return nil, ErrInvalidOrderNumber
+		return nil, ErrInvalidNumber
 	}
 
 	return &order, nil

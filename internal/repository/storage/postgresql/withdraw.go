@@ -51,6 +51,7 @@ func (s WithdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw)
 
 	return nil
 }
+
 func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
 	rows, err := s.connection().Query(ctx,
 		`SELECT order_number, sum, processed_at FROM withdrawals WHERE user_login = $1`, login)
@@ -72,6 +73,15 @@ func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]wit
 
 	return withdrawals, nil
 }
+
+func (s WithdrawStorage) CountByUser(ctx context.Context, login user.Login) (int, error) {
+	var count int
+	err := s.connection().QueryRow(ctx,
+		`SELECT COUNT(*) FROM withdrawals WHERE user_login = $1`, login).Scan(&count)
+
+	return count, err
+}
+
 func (s WithdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
 	_, err := s.connection().Exec(ctx,
 		`UPDATE withdrawals SET user_login = $1, sum = $2, processed_at = $3 WHERE order_number = $4`,

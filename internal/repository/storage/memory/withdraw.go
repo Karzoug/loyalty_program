@@ -59,6 +59,24 @@ func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]wit
 	return withdrawals, nil
 }
 
+func (s WithdrawStorage) CountByUser(ctx context.Context, login user.Login) (int, error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var count int
+	for _, v := range s.Withdrawals {
+		if v.UserLogin == login {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
 func (s WithdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
 	if err := ctx.Err(); err != nil {
 		return err

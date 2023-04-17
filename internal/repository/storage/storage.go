@@ -26,5 +26,6 @@ type Withdraw interface {
 	Create(context.Context, withdraw.Withdraw) error
 	//Get(ctx context.Context, orderNumber order.Number) error
 	GetByUser(context.Context, user.Login) ([]withdraw.Withdraw, error)
+	CountByUser(context.Context, user.Login) (int, error)
 	Update(context.Context, withdraw.Withdraw) error
 }

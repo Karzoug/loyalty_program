@@ -18,7 +18,7 @@ type User interface {
 type Order interface {
 	Create(context.Context, order.Order) error
 	Get(context.Context, order.Number) (*order.Order, error)
-	GetByUser(context context.Context, login string) ([]order.Order, error)
+	GetByUser(ctx context.Context, login string) ([]order.Order, error)
 	Update(context.Context, order.Order) error
 }
 

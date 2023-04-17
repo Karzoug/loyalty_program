@@ -81,6 +81,9 @@ func (s OrderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.
 		err := rows.Scan(&order.Number, &order.Status, &order.Accrual, &order.UploadedAt)
 		return order, err
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	err = rows.Err()
 	if err != nil {

@@ -18,7 +18,7 @@ type configPostgreSQLStorage interface {
 	DatabaseURI() string
 }
 
-func NewDbPool(ctx context.Context, cfg configPostgreSQLStorage) (*pgxpool.Pool, error) {
+func NewDBPool(ctx context.Context, cfg configPostgreSQLStorage) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURI())
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connection pool: %w", err)

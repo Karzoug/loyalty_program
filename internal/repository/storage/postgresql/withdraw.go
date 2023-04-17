@@ -65,6 +65,9 @@ func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]wit
 		err := rows.Scan(&withdraw.OrderNumber, &withdraw.Sum, &withdraw.ProcessedAt)
 		return withdraw, err
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	err = rows.Err()
 	if err != nil {

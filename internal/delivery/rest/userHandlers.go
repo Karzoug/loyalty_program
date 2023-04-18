@@ -40,10 +40,6 @@ func (a authRequest) validate() error {
 	return nil
 }
 
-type authResponse struct {
-	Token string `json:"token"`
-}
-
 func (s *server) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), handlerTimeout)
 	defer cancel()
@@ -144,14 +140,9 @@ func writeAuthToken(w http.ResponseWriter, login user.Login, secretKey string) e
 		return e.Wrap("encode JWT", err)
 	}
 
-	authResp := authResponse{
-		Token: tokenString,
-	}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Authorization", tokenString)
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(authResp); err != nil {
-		return e.Wrap("encode json response", err)
-	}
 	return nil
 }
 

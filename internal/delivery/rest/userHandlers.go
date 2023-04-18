@@ -155,21 +155,19 @@ func (s *server) getUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), handlerTimeout)
 	defer cancel()
 
-	_, claims, err := jwtauth.FromContext(ctx)
+	var hErr *helper.HandlerError
+	login, err := helper.GetLoginFromJWTInContext(ctx, s.logger)
 	if err != nil {
-		s.logger.Error("Get user balance handler: get user login from context error", zap.Error(err))
-		helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)
+		if errors.As(err, &hErr) {
+			helper.WriteJSONError(w, hErr.Message, hErr.Code, s.logger)
+		} else {
+			s.logger.Error("Create order handler: get login from context error", zap.Error(err))
+			helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)
+		}
 		return
 	}
-	sub, exists := claims["sub"]
-	if !exists {
-		s.logger.Error("Get user balance handler: user doesn't have login in JWT: auth middleware error.")
-		helper.WriteJSONError(w, service.ErrInvalidAuthData.Error(), http.StatusUnauthorized, s.logger)
-		return
-	}
-	login := user.Login(sub.(string))
 
-	balance, err := s.service.GetUserBalance(ctx, login)
+	balance, err := s.service.GetUserBalance(ctx, *login)
 	if err != nil {
 		switch err {
 		case service.ErrInvalidAuthData:
@@ -181,7 +179,7 @@ func (s *server) getUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := s.service.CountUserWithdrawals(ctx, login)
+	count, err := s.service.CountUserWithdrawals(ctx, *login)
 	if err != nil {
 		s.logger.Error("Get user balance handler: withdrawals count service error", zap.Error(err))
 		helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)

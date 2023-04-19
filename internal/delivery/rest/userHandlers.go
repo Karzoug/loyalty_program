@@ -2,7 +2,6 @@ package rest
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/service"
 	"github.com/Karzoug/loyalty_program/pkg/e"
 	"github.com/go-chi/jwtauth"
+	"github.com/goccy/go-json"
 	"go.uber.org/zap"
 )
 

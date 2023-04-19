@@ -1,12 +1,13 @@
 package helper
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 // DecodeJSON is a method that in the case of response header/body valid for JSON format,

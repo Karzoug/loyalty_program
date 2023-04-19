@@ -2,7 +2,6 @@ package rest
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest/helper"
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/service"
+	"github.com/goccy/go-json"
 	"go.uber.org/zap"
 )
 

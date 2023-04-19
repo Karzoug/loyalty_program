@@ -13,7 +13,6 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest/helper"
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/service"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -72,10 +71,10 @@ func (s *server) createOrderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type orderResponse struct {
-	Number     string          `json:"number"`
-	Status     string          `json:"status"`
-	Accrual    decimal.Decimal `json:"accrual"`
-	UploadedAt time.Time       `json:"uploaded_at"`
+	Number     string    `json:"number"`
+	Status     string    `json:"status"`
+	Accrual    float64   `json:"accrual"`
+	UploadedAt time.Time `json:"uploaded_at"`
 }
 
 func (s *server) listUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
@@ -103,10 +102,11 @@ func (s *server) listUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
 
 	ordersResp := make([]orderResponse, 0, len(orders))
 	for _, o := range orders {
+		acc, _ := o.Accrual.Float64()
 		ordersResp = append(ordersResp, orderResponse{
 			Number:     strconv.FormatInt(int64(o.Number), 10),
 			Status:     o.Status.String(),
-			Accrual:    o.Accrual.Truncate(2),
+			Accrual:    acc,
 			UploadedAt: o.UploadedAt,
 		})
 	}

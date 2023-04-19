@@ -12,33 +12,33 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var _ storage.Withdraw = (*WithdrawStorage)(nil)
+var _ storage.Withdraw = (*withdrawStorage)(nil)
 
-type WithdrawStorage struct {
+type withdrawStorage struct {
 	pool *pgxpool.Pool
 	tx   pgx.Tx
 }
 
-func NewWithdrawStorage(pool *pgxpool.Pool) *WithdrawStorage {
-	return &WithdrawStorage{
+func NewWithdrawStorage(pool *pgxpool.Pool) *withdrawStorage {
+	return &withdrawStorage{
 		pool: pool,
 	}
 }
 
-func newWithdrawTxStorage(tx pgx.Tx) *WithdrawStorage {
-	return &WithdrawStorage{
+func newWithdrawTxStorage(tx pgx.Tx) *withdrawStorage {
+	return &withdrawStorage{
 		tx: tx,
 	}
 }
 
-func (s WithdrawStorage) connection() pgConnecter {
+func (s withdrawStorage) connection() pgConnecter {
 	if s.tx == nil {
 		return s.pool
 	}
 	return s.tx
 }
 
-func (s WithdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw) error {
+func (s withdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw) error {
 	_, err := s.connection().Exec(ctx, `INSERT INTO withdrawals(order_number, user_login, sum, processed_at) VALUES($1, $2, $3, $4)`,
 		withdraw.OrderNumber, withdraw.UserLogin, withdraw.Sum, withdraw.ProcessedAt)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s WithdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw)
 	return nil
 }
 
-func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
+func (s withdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
 	rows, err := s.connection().Query(ctx,
 		`SELECT order_number, sum, processed_at FROM withdrawals WHERE user_login = $1`, login)
 	if err != nil {
@@ -77,7 +77,7 @@ func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]wit
 	return withdrawals, nil
 }
 
-func (s WithdrawStorage) CountByUser(ctx context.Context, login user.Login) (int, error) {
+func (s withdrawStorage) CountByUser(ctx context.Context, login user.Login) (int, error) {
 	var count int
 	err := s.connection().QueryRow(ctx,
 		`SELECT COUNT(*) FROM withdrawals WHERE user_login = $1`, login).Scan(&count)
@@ -85,7 +85,7 @@ func (s WithdrawStorage) CountByUser(ctx context.Context, login user.Login) (int
 	return count, err
 }
 
-func (s WithdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
+func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
 	_, err := s.connection().Exec(ctx,
 		`UPDATE withdrawals SET user_login = $1, sum = $2, processed_at = $3 WHERE order_number = $4`,
 		withdraw.UserLogin, withdraw.Sum, withdraw.ProcessedAt, withdraw.OrderNumber)

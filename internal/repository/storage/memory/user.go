@@ -9,21 +9,21 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var _ storage.User = (*UserStorage)(nil)
+var _ storage.User = (*userStorage)(nil)
 
-type UserStorage struct {
+type userStorage struct {
 	users map[user.Login]user.User
 	mu    *sync.RWMutex
 }
 
-func NewUserStorage() *UserStorage {
-	return &UserStorage{
+func NewUserStorage() *userStorage {
+	return &userStorage{
 		users: make(map[user.Login]user.User),
 		mu:    &sync.RWMutex{},
 	}
 }
 
-func (s UserStorage) Create(ctx context.Context, user user.User) error {
+func (s userStorage) Create(ctx context.Context, user user.User) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (s UserStorage) Create(ctx context.Context, user user.User) error {
 	return nil
 }
 
-func (s UserStorage) UpdateBalance(ctx context.Context, login user.Login, delta decimal.Decimal) (*decimal.Decimal, error) {
+func (s userStorage) UpdateBalance(ctx context.Context, login user.Login, delta decimal.Decimal) (*decimal.Decimal, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s UserStorage) UpdateBalance(ctx context.Context, login user.Login, delta 
 	return &u.Balance, nil
 }
 
-func (s UserStorage) Get(ctx context.Context, login user.Login) (*user.User, error) {
+func (s userStorage) Get(ctx context.Context, login user.Login) (*user.User, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

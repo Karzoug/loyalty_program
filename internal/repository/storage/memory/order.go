@@ -9,21 +9,21 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 )
 
-var _ storage.Order = (*OrderStorage)(nil)
+var _ storage.Order = (*orderStorage)(nil)
 
-type OrderStorage struct {
+type orderStorage struct {
 	orders map[order.Number]order.Order
 	mu     *sync.RWMutex
 }
 
-func NewOrderStorage() *OrderStorage {
-	return &OrderStorage{
+func NewOrderStorage() *orderStorage {
+	return &orderStorage{
 		orders: make(map[order.Number]order.Order),
 		mu:     &sync.RWMutex{},
 	}
 }
 
-func (s OrderStorage) Create(ctx context.Context, order order.Order) error {
+func (s orderStorage) Create(ctx context.Context, order order.Order) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (s OrderStorage) Create(ctx context.Context, order order.Order) error {
 
 	return nil
 }
-func (s OrderStorage) Get(ctx context.Context, number order.Number) (*order.Order, error) {
+func (s orderStorage) Get(ctx context.Context, number order.Number) (*order.Order, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (s OrderStorage) Get(ctx context.Context, number order.Number) (*order.Orde
 
 	return &o, nil
 }
-func (s OrderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.Order, error) {
+func (s orderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.Order, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s OrderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.
 
 	return orders, nil
 }
-func (s OrderStorage) Update(ctx context.Context, order order.Order) error {
+func (s orderStorage) Update(ctx context.Context, order order.Order) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}

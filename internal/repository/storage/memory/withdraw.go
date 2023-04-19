@@ -10,21 +10,21 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 )
 
-var _ storage.Withdraw = (*WithdrawStorage)(nil)
+var _ storage.Withdraw = (*withdrawStorage)(nil)
 
-type WithdrawStorage struct {
+type withdrawStorage struct {
 	Withdrawals map[order.Number]withdraw.Withdraw
 	mu          *sync.RWMutex
 }
 
-func NewWithdrawStorage() *WithdrawStorage {
-	return &WithdrawStorage{
+func NewWithdrawStorage() *withdrawStorage {
+	return &withdrawStorage{
 		Withdrawals: make(map[order.Number]withdraw.Withdraw),
 		mu:          &sync.RWMutex{},
 	}
 }
 
-func (s WithdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw) error {
+func (s withdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (s WithdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw)
 	return nil
 }
 
-func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
+func (s withdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s WithdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]wit
 	return withdrawals, nil
 }
 
-func (s WithdrawStorage) CountByUser(ctx context.Context, login user.Login) (int, error) {
+func (s withdrawStorage) CountByUser(ctx context.Context, login user.Login) (int, error) {
 	if err := ctx.Err(); err != nil {
 		return 0, err
 	}
@@ -77,7 +77,7 @@ func (s WithdrawStorage) CountByUser(ctx context.Context, login user.Login) (int
 	return count, nil
 }
 
-func (s WithdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
+func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}

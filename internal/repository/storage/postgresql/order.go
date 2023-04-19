@@ -13,33 +13,33 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var _ storage.Order = (*OrderStorage)(nil)
+var _ storage.Order = (*orderStorage)(nil)
 
-type OrderStorage struct {
+type orderStorage struct {
 	pool *pgxpool.Pool
 	tx   pgx.Tx
 }
 
-func NewOrderStorage(pool *pgxpool.Pool) *OrderStorage {
-	return &OrderStorage{
+func NewOrderStorage(pool *pgxpool.Pool) *orderStorage {
+	return &orderStorage{
 		pool: pool,
 	}
 }
 
-func newOrderTxStorage(tx pgx.Tx) *OrderStorage {
-	return &OrderStorage{
+func newOrderTxStorage(tx pgx.Tx) *orderStorage {
+	return &orderStorage{
 		tx: tx,
 	}
 }
 
-func (s OrderStorage) connection() pgConnecter {
+func (s orderStorage) connection() pgConnecter {
 	if s.tx == nil {
 		return s.pool
 	}
 	return s.tx
 }
 
-func (s OrderStorage) Create(ctx context.Context, order order.Order) error {
+func (s orderStorage) Create(ctx context.Context, order order.Order) error {
 	_, err := s.connection().Exec(ctx, `INSERT INTO orders(number, user_login, status, accrual, uploaded_at) VALUES($1, $2, $3, $4, $5)`,
 		order.Number, order.UserLogin, order.Status, order.Accrual, order.UploadedAt)
 	if err != nil {
@@ -53,7 +53,7 @@ func (s OrderStorage) Create(ctx context.Context, order order.Order) error {
 	return nil
 }
 
-func (s OrderStorage) Get(ctx context.Context, number order.Number) (*order.Order, error) {
+func (s orderStorage) Get(ctx context.Context, number order.Number) (*order.Order, error) {
 	order := order.Order{Number: number}
 	err := s.connection().QueryRow(ctx,
 		`SELECT user_login, status, accrual, uploaded_at FROM orders WHERE number = $1`, number).
@@ -68,7 +68,7 @@ func (s OrderStorage) Get(ctx context.Context, number order.Number) (*order.Orde
 	return &order, nil
 }
 
-func (s OrderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.Order, error) {
+func (s orderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.Order, error) {
 	rows, err := s.connection().Query(ctx,
 		`SELECT number, status, accrual, uploaded_at FROM orders WHERE user_login = $1`, login)
 	if err != nil {
@@ -93,7 +93,7 @@ func (s OrderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.
 	return orders, nil
 }
 
-func (s OrderStorage) Update(ctx context.Context, order order.Order) error {
+func (s orderStorage) Update(ctx context.Context, order order.Order) error {
 	_, err := s.connection().Exec(ctx,
 		`UPDATE orders SET user_login = $1, status = $2, accrual = $3, uploaded_at = $4 WHERE number = $5`,
 		order.UserLogin, order.Status, order.Accrual, order.UploadedAt, order.Number)

@@ -140,7 +140,7 @@ func writeAuthToken(w http.ResponseWriter, login user.Login, secretKey string) e
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Add("Authorization", tokenString)
+	w.Header().Add("Authorization", "BEARER "+tokenString)
 	w.WriteHeader(http.StatusOK)
 	return nil
 }

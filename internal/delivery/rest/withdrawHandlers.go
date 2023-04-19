@@ -128,12 +128,14 @@ func (s *server) createWithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = s.service.CreateWithdraw(ctx, *login, orderNumber, decimal.NewFromFloat(withdrawReq.Sum))
 	if err != nil {
 		switch err {
+		case service.ErrInvalidAuthData:
+			helper.WriteJSONError(w, err.Error(), http.StatusUnauthorized, s.logger)
 		case service.ErrInvalidOrderNumber:
-			helper.WriteJSONError(w, service.ErrInvalidOrderNumber.Error(), http.StatusUnprocessableEntity, s.logger)
+			helper.WriteJSONError(w, err.Error(), http.StatusUnprocessableEntity, s.logger)
 		case service.ErrInsufficientBalance:
-			helper.WriteJSONError(w, service.ErrInsufficientBalance.Error(), http.StatusPaymentRequired, s.logger)
+			helper.WriteJSONError(w, err.Error(), http.StatusPaymentRequired, s.logger)
 		default:
-			s.logger.Error("Create withdraw handler: decode withdraw request from JSON error", zap.Error(err))
+			s.logger.Error("Create withdraw handler: create withdraw service error", zap.Error(err))
 			helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)
 		}
 		return

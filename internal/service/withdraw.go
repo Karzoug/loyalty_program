@@ -7,6 +7,7 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/model/withdraw"
+	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 	"github.com/shopspring/decimal"
 )
 
@@ -27,6 +28,9 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 
 	result, err := tx.User().UpdateBalance(ctx, login, sum.Neg())
 	if err != nil {
+		if errors.Is(err, storage.ErrRecordNotFound) {
+			return nil, ErrInvalidAuthData
+		}
 		return nil, err
 	}
 	// balance went negative

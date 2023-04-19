@@ -53,9 +53,9 @@ func (s *server) createOrderHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case service.ErrInvalidOrderNumber:
-			http.Error(w, service.ErrInvalidOrderNumber.Error(), http.StatusUnprocessableEntity)
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		case service.ErrAnotherUserOrderNumber:
-			http.Error(w, service.ErrAnotherUserOrderNumber.Error(), http.StatusConflict)
+			http.Error(w, err.Error(), http.StatusConflict)
 		default:
 			s.logger.Error("Create order handler: create order service error", zap.Error(err))
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

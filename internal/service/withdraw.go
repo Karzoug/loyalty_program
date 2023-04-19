@@ -19,24 +19,30 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 		return nil, err
 	}
 
-	// TODO: add transaction
-	result, err := s.storages.User().UpdateBalance(ctx, login, sum.Neg())
+	tx, err := s.storages.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	result, err := tx.User().UpdateBalance(ctx, login, sum.Neg())
 	if err != nil {
 		return nil, err
 	}
 	// balance went negative
 	if result.LessThan(decimal.Decimal{}) {
-		// TODO: rollback transaction
 		return nil, ErrInsufficientBalance
 	}
 
-	err = s.storages.Withdraw().Create(ctx, *w)
+	err = tx.Withdraw().Create(ctx, *w)
 	if err != nil {
-		// TODO: rollback transaction
 		return nil, err
 	}
 
-	// TODO: commit transaction
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return w, nil
 }
 

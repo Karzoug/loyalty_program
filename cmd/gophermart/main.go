@@ -8,7 +8,7 @@ import (
 
 	"github.com/Karzoug/loyalty_program/internal/config"
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest"
-	"github.com/Karzoug/loyalty_program/internal/repository/storage/memory"
+	"github.com/Karzoug/loyalty_program/internal/repository/storage/postgresql"
 	"github.com/Karzoug/loyalty_program/internal/service"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -34,7 +34,11 @@ func main() {
 	}
 	defer logger.Sync()
 
-	storages := memory.NewStorages()
+	pool, err := postgresql.NewDBPool(ctx, cfg)
+	if err != nil {
+		logger.Fatal("Create db pool error", zap.Error(err))
+	}
+	storages := postgresql.NewStorages(pool)
 
 	service := service.New(storages, logger)
 

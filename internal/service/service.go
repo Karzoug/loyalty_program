@@ -6,11 +6,11 @@ import (
 )
 
 type Service struct {
-	storages storage.Storages
+	storages storage.TxStorages
 	logger   *zap.Logger
 }
 
-func New(storages storage.Storages, logger *zap.Logger) *Service {
+func New(storages storage.TxStorages, logger *zap.Logger) *Service {
 	return &Service{
 		storages: storages,
 		logger:   logger,

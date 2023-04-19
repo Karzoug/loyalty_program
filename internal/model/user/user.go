@@ -18,6 +18,9 @@ type User struct {
 }
 
 func New(login Login, password string) (*User, error) {
+	if len(password) == 0 {
+		return nil, ErrBadPassword
+	}
 	encpw, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, ErrBadPassword

@@ -21,9 +21,9 @@ var (
 )
 
 type withdrawResponse struct {
-	Order       string          `json:"order"`
-	Sum         decimal.Decimal `json:"sum"`
-	ProcessedAt time.Time       `json:"processed_at"`
+	Order       string    `json:"order"`
+	Sum         float64   `json:"sum"`
+	ProcessedAt time.Time `json:"processed_at"`
 }
 
 func (s *server) listUserWithdrawalsHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +53,7 @@ func (s *server) listUserWithdrawalsHandler(w http.ResponseWriter, r *http.Reque
 	for _, w := range ws {
 		withdrawalsResp = append(withdrawalsResp, withdrawResponse{
 			Order:       strconv.FormatInt(int64(w.OrderNumber), 10),
-			Sum:         w.Sum.Truncate(2),
+			Sum:         w.Sum.InexactFloat64(),
 			ProcessedAt: w.ProcessedAt,
 		})
 	}
@@ -75,12 +75,12 @@ func (s *server) listUserWithdrawalsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 type withdrawRequest struct {
-	Order string          `json:"order"`
-	Sum   decimal.Decimal `json:"sum"`
+	Order string  `json:"order"`
+	Sum   float64 `json:"sum"`
 }
 
 func (r withdrawRequest) validate() error {
-	if r.Sum.LessThanOrEqual(decimal.Decimal{}) {
+	if r.Sum <= 0 {
 		return ErrInvalidSum
 	}
 	return nil
@@ -125,7 +125,7 @@ func (s *server) createWithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	orderNumber := order.Number(number)
 
-	_, err = s.service.CreateWithdraw(ctx, *login, orderNumber, withdrawReq.Sum)
+	_, err = s.service.CreateWithdraw(ctx, *login, orderNumber, decimal.NewFromFloat(withdrawReq.Sum))
 	if err != nil {
 		switch err {
 		case service.ErrInvalidOrderNumber:

@@ -12,7 +12,6 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/service"
 	"github.com/Karzoug/loyalty_program/pkg/e"
 	"github.com/go-chi/jwtauth"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -147,8 +146,8 @@ func writeAuthToken(w http.ResponseWriter, login user.Login, secretKey string) e
 }
 
 type balanceResponse struct {
-	Balance   decimal.Decimal `json:"current"`
-	Withdrawn int             `json:"withdrawn"`
+	Balance   float64 `json:"current"`
+	Withdrawn int     `json:"withdrawn"`
 }
 
 func (s *server) getUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +186,7 @@ func (s *server) getUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	balanceResp := balanceResponse{
-		Balance:   *balance,
+		Balance:   (*balance).InexactFloat64(),
 		Withdrawn: count,
 	}
 

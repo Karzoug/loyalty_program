@@ -1,18 +1,21 @@
 package service
 
 import (
+	"github.com/Karzoug/loyalty_program/internal/repository/processor"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 	"go.uber.org/zap"
 )
 
 type Service struct {
-	storages storage.TxStorages
-	logger   *zap.Logger
+	storages       storage.TxStorages
+	orderProcessor processor.Order
+	logger         *zap.Logger
 }
 
-func New(storages storage.TxStorages, logger *zap.Logger) *Service {
+func New(storages storage.TxStorages, proc processor.Order, logger *zap.Logger) *Service {
 	return &Service{
-		storages: storages,
-		logger:   logger,
+		storages:       storages,
+		orderProcessor: proc,
+		logger:         logger,
 	}
 }

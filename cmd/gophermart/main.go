@@ -8,7 +8,7 @@ import (
 
 	"github.com/Karzoug/loyalty_program/internal/config"
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest"
-	"github.com/Karzoug/loyalty_program/internal/repository/processor/accrual"
+	"github.com/Karzoug/loyalty_program/internal/repository/processor/mock"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage/postgresql"
 	"github.com/Karzoug/loyalty_program/internal/service"
 	"go.uber.org/zap"
@@ -40,7 +40,7 @@ func main() {
 		logger.Fatal("Database error", zap.Error(err))
 	}
 
-	proc := accrual.NewOrderProcessor(cfg, logger)
+	proc := mock.NewOrderProcessor()
 
 	service := service.New(storages, proc, logger)
 

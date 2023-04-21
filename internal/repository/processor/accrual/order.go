@@ -26,7 +26,7 @@ import (
 var _ processor.Order = (*orderProcessor)(nil)
 
 const (
-	accrualUrlPathFmt = "/api/orders/%d"
+	accrualURLPathFmt = "/api/orders/%d"
 	maxAttemptNumber  = 3 // number of attempts to get a response from the server
 
 	rateLimit = 1000 // requests count per second
@@ -115,7 +115,7 @@ type orderAccrual struct {
 // getOrderAccrual makes attempts to get order data from accrual service.
 func (p *orderProcessor) getOrderAccrual(ctx context.Context, number morder.Number) (*orderAccrual, error) {
 	url := p.cfg.AccrualSystemAddress()
-	url.Path = fmt.Sprintf(accrualUrlPathFmt, number)
+	url.Path = fmt.Sprintf(accrualURLPathFmt, number)
 
 	var body []byte
 	for i := 1; i <= maxAttemptNumber; i++ {

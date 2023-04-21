@@ -189,7 +189,7 @@ func (s *server) getUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	balanceResp := balanceResponse{
-		Balance:   (*balance).InexactFloat64(),
+		Balance:   balance.InexactFloat64(),
 		Withdrawn: sum.InexactFloat64(),
 	}
 

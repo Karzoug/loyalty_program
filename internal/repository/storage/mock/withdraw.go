@@ -38,13 +38,21 @@ func (s withdrawStorage) connection() sqliteConnecter {
 }
 
 func (s withdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw) error {
-	_, err := s.connection().ExecContext(ctx, `INSERT INTO withdrawals(order_number, user_login, sum, processed_at) VALUES(?, ?, ?, ?)`,
+	res, err := s.connection().ExecContext(ctx, `INSERT INTO withdrawals(order_number, user_login, sum, processed_at) VALUES(?, ?, ?, ?)`,
 		withdraw.OrderNumber, withdraw.UserLogin, withdraw.Sum, withdraw.ProcessedAt)
 	if err != nil {
 		if strings.Contains(err.Error(), duplicateKeyErrorCode) {
 			return storage.ErrRecordAlreadyExists
 		}
 		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return storage.ErrNoRecordAffected
 	}
 
 	return nil
@@ -93,14 +101,19 @@ func (s withdrawStorage) SumByUser(ctx context.Context, login user.Login) (*deci
 }
 
 func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
-	_, err := s.connection().ExecContext(ctx,
+	res, err := s.connection().ExecContext(ctx,
 		`UPDATE withdrawals SET user_login = ?, sum = ?, processed_at = ? WHERE order_number = ?`,
 		withdraw.UserLogin, withdraw.Sum, withdraw.ProcessedAt, withdraw.OrderNumber)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return storage.ErrRecordNotFound
-		}
 		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return storage.ErrNoRecordAffected
 	}
 
 	return nil

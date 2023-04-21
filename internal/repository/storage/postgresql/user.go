@@ -40,7 +40,7 @@ func (s userStorage) connection() pgConnecter {
 }
 
 func (s userStorage) Create(ctx context.Context, user user.User) error {
-	_, err := s.connection().Exec(ctx, `INSERT INTO users(login, encrypted_password, balance) VALUES($1, $2, $3)`,
+	tag, err := s.connection().Exec(ctx, `INSERT INTO users(login, encrypted_password, balance) VALUES($1, $2, $3)`,
 		user.Login, user.EncryptedPassword, user.Balance)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -48,6 +48,10 @@ func (s userStorage) Create(ctx context.Context, user user.User) error {
 			return storage.ErrRecordAlreadyExists
 		}
 		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return storage.ErrNoRecordAffected
 	}
 
 	return nil

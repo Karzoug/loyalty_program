@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Karzoug/loyalty_program/migrations"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "modernc.org/sqlite"
 )
 
@@ -22,11 +23,16 @@ func newDBInMemory(ctx context.Context) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create db connection: %w", err)
 	}
+
+	d, err := iofs.New(migrations.FS, ".")
+	if err != nil {
+		return nil, fmt.Errorf("unable to apply migrations: %w", err)
+	}
 	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to apply migrations: %w", err)
 	}
-	m, err := migrate.NewWithDatabaseInstance("file://./migrations", "sqlite", driver)
+	m, err := migrate.NewWithInstance("iofs", d, "sqlite", driver)
 	if err != nil {
 		return nil, fmt.Errorf("unable to apply migrations: %w", err)
 	}

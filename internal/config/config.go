@@ -16,14 +16,12 @@ const (
 	defaultDatabaseURI          = ""
 	defaultSecretKey            = ""
 	defaultDebug                = false
-	defaultBrokerURI            = "redis://localhost:6379/"
 )
 
 type config struct {
 	runAddressString           string
 	runAddressURL              url.URL
 	accrualSystemAddressString string
-	brokerURI                  string
 	accrualSystemAddressURL    url.URL
 	databaseURI                string
 	secretKey                  string
@@ -55,11 +53,6 @@ func (c config) AccrualSystemAddress() url.URL {
 	return c.accrualSystemAddressURL
 }
 
-// BrokerURI is a broker connection string.
-func (c config) BrokerURI() string {
-	return c.brokerURI
-}
-
 // DatabaseURI is a database connection string.
 func (c config) DatabaseURI() string {
 	return c.databaseURI
@@ -81,7 +74,6 @@ func (c *config) readFlags() {
 	}
 	flag.StringVar(&c.runAddressString, "a", defaultRunAddress, "rest server address and port")
 	flag.StringVar(&c.accrualSystemAddressString, "r", defaultAccrualSystemAddress, "accrual system address and port")
-	flag.StringVar(&c.brokerURI, "b", defaultBrokerURI, "message broker connection string")
 	flag.StringVar(&c.databaseURI, "d", defaultDatabaseURI, "database connection string")
 	flag.StringVar(&c.secretKey, "k", defaultSecretKey, "key to create a JWT signature")
 	flag.BoolVar(&c.debug, "debug", defaultDebug, "debug mode")
@@ -95,9 +87,6 @@ func (c *config) readEnvs() error {
 	}
 	if accrualSystemAddressString, ok := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS"); ok {
 		c.accrualSystemAddressString = accrualSystemAddressString
-	}
-	if brokerURIString, ok := os.LookupEnv("BROKER_URI"); ok {
-		c.brokerURI = brokerURIString
 	}
 	if databaseURIString, ok := os.LookupEnv("DATABASE_URI"); ok {
 		c.databaseURI = databaseURIString
@@ -128,10 +117,6 @@ func (c *config) validate() error {
 		return e.Wrap("accrual system address", err)
 	}
 	c.accrualSystemAddressURL = *accrualSystemAddressURL
-
-	if c.brokerURI == "" {
-		return errors.New("message broker connection string must be non empty")
-	}
 
 	if c.databaseURI == "" {
 		return errors.New("database connection string must be non empty")

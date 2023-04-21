@@ -49,6 +49,11 @@ func (s *server) listUserWithdrawalsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if len(ws) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	withdrawalsResp := make([]withdrawResponse, 0, len(ws))
 	for _, w := range ws {
 		withdrawalsResp = append(withdrawalsResp, withdrawResponse{
@@ -62,15 +67,11 @@ func (s *server) listUserWithdrawalsHandler(w http.ResponseWriter, r *http.Reque
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	if len(ws) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-	} else {
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(withdrawalsResp); err != nil {
-			s.logger.Error("List user withdrawals handler: encode json response error", zap.Error(err))
-			helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)
-			return
-		}
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(withdrawalsResp); err != nil {
+		s.logger.Error("List user withdrawals handler: encode json response error", zap.Error(err))
+		helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)
+		return
 	}
 }
 

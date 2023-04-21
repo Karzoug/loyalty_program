@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -16,7 +17,9 @@ import (
 )
 
 const (
-	tokenLifetime = 24 * time.Hour
+	tokenLifetime      = 24 * time.Hour
+	authHeaderKey      = "Authorization"
+	authHeaderValueFmt = "BEARER %s"
 )
 
 var (
@@ -140,7 +143,7 @@ func writeAuthToken(w http.ResponseWriter, login user.Login, secretKey string) e
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Add("Authorization", "BEARER "+tokenString)
+	w.Header().Add(authHeaderKey, fmt.Sprintf(authHeaderValueFmt, tokenString))
 	w.WriteHeader(http.StatusOK)
 	return nil
 }

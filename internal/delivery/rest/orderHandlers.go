@@ -100,6 +100,11 @@ func (s *server) listUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(orders) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	ordersResp := make([]orderResponse, 0, len(orders))
 	for _, o := range orders {
 		ordersResp = append(ordersResp, orderResponse{
@@ -114,10 +119,6 @@ func (s *server) listUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	if len(orders) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(ordersResp); err != nil {
 		s.logger.Error("List user orders handler: encode json response error", zap.Error(err))

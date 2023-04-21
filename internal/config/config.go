@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"flag"
+	"net"
 	"net/url"
 	"os"
 	"strconv"
@@ -12,15 +13,14 @@ import (
 
 const (
 	defaultRunAddress           = "localhost:8081"
-	defaultAccrualSystemAddress = "http://localhost::8080"
+	defaultAccrualSystemAddress = "http://localhost:8080"
 	defaultDatabaseURI          = ""
 	defaultSecretKey            = ""
 	defaultDebug                = false
 )
 
 type config struct {
-	runAddressString           string
-	runAddressURL              url.URL
+	runAddress                 string
 	accrualSystemAddressString string
 	accrualSystemAddressURL    url.URL
 	databaseURI                string
@@ -43,9 +43,9 @@ func Read() (*config, error) {
 	return &c, nil
 }
 
-// RunAddress is a rest server address URL.
-func (c config) RunAddress() url.URL {
-	return c.runAddressURL
+// RunAddress is a rest server address (host:port).
+func (c config) RunAddress() string {
+	return c.runAddress
 }
 
 // AccrualSystemAddress is an accrual system address URL.
@@ -72,8 +72,8 @@ func (c *config) readFlags() {
 	if flag.Parsed() {
 		return
 	}
-	flag.StringVar(&c.runAddressString, "a", defaultRunAddress, "rest server address and port")
-	flag.StringVar(&c.accrualSystemAddressString, "r", defaultAccrualSystemAddress, "accrual system address and port")
+	flag.StringVar(&c.runAddress, "a", defaultRunAddress, "rest server host and port")
+	flag.StringVar(&c.accrualSystemAddressString, "r", defaultAccrualSystemAddress, "accrual system address (incl.scheme)")
 	flag.StringVar(&c.databaseURI, "d", defaultDatabaseURI, "database connection string")
 	flag.StringVar(&c.secretKey, "k", defaultSecretKey, "key to create a JWT signature")
 	flag.BoolVar(&c.debug, "debug", defaultDebug, "debug mode")
@@ -83,7 +83,7 @@ func (c *config) readFlags() {
 
 func (c *config) readEnvs() error {
 	if runAddressString, ok := os.LookupEnv("RUN_ADDRESS"); ok {
-		c.runAddressString = runAddressString
+		c.runAddress = runAddressString
 	}
 	if accrualSystemAddressString, ok := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS"); ok {
 		c.accrualSystemAddressString = accrualSystemAddressString
@@ -106,17 +106,16 @@ func (c *config) readEnvs() error {
 }
 
 func (c *config) validate() error {
-	runAddressURL, err := url.ParseRequestURI(c.runAddressString)
+	_, _, err := net.SplitHostPort(c.runAddress)
 	if err != nil {
-		return e.Wrap("rest server address", err)
+		return errors.New("rest server host and port have wrong format")
 	}
-	c.runAddressURL = *runAddressURL
 
-	accrualSystemAddressURL, err := url.ParseRequestURI(c.accrualSystemAddressString)
-	if err != nil {
-		return e.Wrap("accrual system address", err)
+	u, err := url.ParseRequestURI(c.accrualSystemAddressString)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return errors.New("accrual system address has wrong format")
 	}
-	c.accrualSystemAddressURL = *accrualSystemAddressURL
+	c.accrualSystemAddressURL = *u
 
 	if c.databaseURI == "" {
 		return errors.New("database connection string must be non empty")

@@ -19,7 +19,7 @@ type withdrawStorage struct {
 	tx   pgx.Tx
 }
 
-func NewWithdrawStorage(pool *pgxpool.Pool) *withdrawStorage {
+func newWithdrawStorage(pool *pgxpool.Pool) *withdrawStorage {
 	return &withdrawStorage{
 		pool: pool,
 	}

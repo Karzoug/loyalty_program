@@ -20,7 +20,7 @@ type orderStorage struct {
 	tx   pgx.Tx
 }
 
-func NewOrderStorage(pool *pgxpool.Pool) *orderStorage {
+func newOrderStorage(pool *pgxpool.Pool) *orderStorage {
 	return &orderStorage{
 		pool: pool,
 	}
@@ -40,7 +40,7 @@ func (s orderStorage) connection() pgConnecter {
 }
 
 func (s orderStorage) Create(ctx context.Context, order order.Order) error {
-	_, err := s.connection().Exec(ctx, `INSERT INTO orders(number, user_login, status, accrual, uploaded_at) VALUES($1, $2, $3, $4, $5)`,
+	tag, err := s.connection().Exec(ctx, `INSERT INTO orders(number, user_login, status, accrual, uploaded_at) VALUES($1, $2, $3, $4, $5)`,
 		order.Number, order.UserLogin, order.Status, order.Accrual, order.UploadedAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -48,6 +48,10 @@ func (s orderStorage) Create(ctx context.Context, order order.Order) error {
 			return storage.ErrRecordAlreadyExists
 		}
 		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return storage.ErrNoRecordAffected
 	}
 
 	return nil
@@ -94,14 +98,31 @@ func (s orderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.
 }
 
 func (s orderStorage) Update(ctx context.Context, order order.Order) error {
-	_, err := s.connection().Exec(ctx,
+	tag, err := s.connection().Exec(ctx,
 		`UPDATE orders SET user_login = $1, status = $2, accrual = $3, uploaded_at = $4 WHERE number = $5`,
 		order.UserLogin, order.Status, order.Accrual, order.UploadedAt, order.Number)
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return storage.ErrNoRecordAffected
+	}
+
+	return nil
+}
+
+func (s orderStorage) Delete(ctx context.Context, number order.Number) error {
+	tag, err := s.connection().Exec(ctx, `DELETE FROM orders WHERE number = $1`, number)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return storage.ErrRecordNotFound
 		}
 		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return storage.ErrNoRecordAffected
 	}
 
 	return nil

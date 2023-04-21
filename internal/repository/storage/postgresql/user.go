@@ -20,7 +20,7 @@ type userStorage struct {
 	tx   pgx.Tx
 }
 
-func NewUserStorage(pool *pgxpool.Pool) *userStorage {
+func newUserStorage(pool *pgxpool.Pool) *userStorage {
 	return &userStorage{
 		pool: pool,
 	}

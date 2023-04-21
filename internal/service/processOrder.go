@@ -29,7 +29,10 @@ func (s *Service) processOrder(o order.Order) {
 	// order not found: delete
 	if errors.Is(result.Err, processor.ErrOrderNotRegistered) {
 		s.logger.Warn("Process order: order not registred in accrual service and will be deleted", zap.Int64("order number", int64(o.Number)))
-		// TODO: delete order
+		err := s.storages.Order().Delete(ctx, o.Number)
+		if err != nil {
+			s.logger.Error("Process order: order storage: delete order error", zap.Error(err))
+		}
 		return
 	}
 

@@ -20,6 +20,7 @@ type Order interface {
 	Get(context.Context, order.Number) (*order.Order, error)
 	GetByUser(context.Context, user.Login) ([]order.Order, error)
 	Update(context.Context, order.Order) error
+	Delete(context.Context, order.Number) error
 }
 
 type Withdraw interface {

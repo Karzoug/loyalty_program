@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest/middleware"
@@ -18,7 +19,7 @@ const (
 )
 
 type serverConfig interface {
-	RunAddress() string
+	RunAddress() url.URL
 	SecretKey() string
 }
 
@@ -36,12 +37,12 @@ func New(cfg serverConfig, service *service.Service, logger *zap.Logger) server 
 		logger:  logger,
 		service: service,
 
-		server: &http.Server{Addr: cfg.RunAddress()},
+		server: &http.Server{Addr: cfg.RunAddress().Host},
 	}
 }
 
 func (s *server) Run(ctx context.Context) error {
-	s.logger.Info("Running http server", zap.String("address", s.cfg.RunAddress()))
+	s.logger.Info("Running http server", zap.String("address", s.cfg.RunAddress().Host))
 
 	s.server.Handler = s.newRouter()
 

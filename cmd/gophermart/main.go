@@ -34,11 +34,10 @@ func main() {
 	}
 	defer logger.Sync()
 
-	pool, err := postgresql.NewDBPool(ctx, cfg)
+	storages, err := postgresql.NewStorages(ctx, cfg)
 	if err != nil {
-		logger.Fatal("Create db pool error", zap.Error(err))
+		logger.Fatal("Database error", zap.Error(err))
 	}
-	storages := postgresql.NewStorages(pool)
 
 	service := service.New(storages, logger)
 

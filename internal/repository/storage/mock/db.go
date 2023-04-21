@@ -16,12 +16,8 @@ const (
 	duplicateKeyErrorCode = "1555"
 )
 
-type configPostgreSQLStorage interface {
-	DatabaseURI() string
-}
-
-// NewDBInMemory creates connection to sqlite database in memory. Intended for testing only!
-func NewDBInMemory(ctx context.Context) (*sql.DB, error) {
+// newDBInMemory creates connection to sqlite database in memory. Intended for testing only!
+func newDBInMemory(ctx context.Context) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create db connection: %w", err)

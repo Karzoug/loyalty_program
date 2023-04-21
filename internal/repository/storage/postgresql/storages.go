@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
+	"github.com/Karzoug/loyalty_program/pkg/e"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -16,13 +17,19 @@ type storages struct {
 	withdrawStorage storage.Withdraw
 }
 
-func NewStorages(pool *pgxpool.Pool) *storages {
+// NewStorages returns a set of storages for the service to work with data.
+func NewStorages(ctx context.Context, cfg configPostgreSQLStorage) (*storages, error) {
+	pool, err := newDBPool(ctx, cfg)
+	if err != nil {
+		return nil, e.Wrap("open postgresql db connection", err)
+	}
+
 	return &storages{
 		pool:            pool,
 		userStorage:     NewUserStorage(pool),
 		orderStorage:    NewOrderStorage(pool),
 		withdrawStorage: NewWithdrawStorage(pool),
-	}
+	}, nil
 }
 
 func (r *storages) BeginTx(ctx context.Context) (storage.Transaction, error) {

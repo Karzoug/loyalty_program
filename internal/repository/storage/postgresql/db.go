@@ -12,19 +12,20 @@ import (
 
 const (
 	duplicateKeyErrorCode = "23505"
+	poolCreationTimeout   = 3 * time.Second
 )
 
 type configPostgreSQLStorage interface {
 	DatabaseURI() string
 }
 
-func NewDBPool(ctx context.Context, cfg configPostgreSQLStorage) (*pgxpool.Pool, error) {
+func newDBPool(ctx context.Context, cfg configPostgreSQLStorage) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURI())
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connection pool: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, poolCreationTimeout)
 	defer cancel()
 
 	if err = pool.Ping(ctx); err != nil {

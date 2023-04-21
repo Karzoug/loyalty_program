@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
+	"github.com/Karzoug/loyalty_program/pkg/e"
 )
 
 var _ storage.TxStorages = (*storages)(nil)
@@ -17,14 +18,19 @@ type storages struct {
 	withdrawStorage storage.Withdraw
 }
 
-// NewStorages creates a mock storage for testing tasks, does not support real transactions.
-func NewStorages(db *sql.DB) *storages {
+// NewStorages returns a mock set of storages for the service to work with data. Intended for testing only!
+func NewStorages(ctx context.Context) (*storages, error) {
+	db, err := newDBInMemory(ctx)
+	if err != nil {
+		return nil, e.Wrap("create mock db in memory", err)
+	}
+
 	return &storages{
 		db:              db,
 		userStorage:     NewUserStorage(db),
 		orderStorage:    NewOrderStorage(db),
 		withdrawStorage: NewWithdrawStorage(db),
-	}
+	}, nil
 }
 
 func (r *storages) BeginTx(ctx context.Context) (storage.Transaction, error) {

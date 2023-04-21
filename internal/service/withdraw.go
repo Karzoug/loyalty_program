@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
@@ -19,6 +20,10 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 		}
 		return nil, err
 	}
+
+	// since checks from external services are not required,
+	// we can set the processed time to the current
+	w.ProcessedAt = time.Now().UTC()
 
 	tx, err := s.storages.BeginTx(ctx)
 	if err != nil {

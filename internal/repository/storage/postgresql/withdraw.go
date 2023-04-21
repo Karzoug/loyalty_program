@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 )
 
 var _ storage.Withdraw = (*withdrawStorage)(nil)
@@ -83,6 +84,14 @@ func (s withdrawStorage) CountByUser(ctx context.Context, login user.Login) (int
 		`SELECT COUNT(*) FROM withdrawals WHERE user_login = $1`, login).Scan(&count)
 
 	return count, err
+}
+
+func (s withdrawStorage) SumByUser(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
+	var sum decimal.Decimal
+	err := s.connection().QueryRow(ctx,
+		`SELECT SUM(sum) FROM withdrawals WHERE user_login = $1`, login).Scan(&sum)
+
+	return &sum, err
 }
 
 func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {

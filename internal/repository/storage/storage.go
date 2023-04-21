@@ -28,5 +28,6 @@ type Withdraw interface {
 	//Get(ctx context.Context, orderNumber order.Number) error
 	GetByUser(context.Context, user.Login) ([]withdraw.Withdraw, error)
 	CountByUser(context.Context, user.Login) (int, error)
+	SumByUser(context.Context, user.Login) (*decimal.Decimal, error)
 	Update(context.Context, withdraw.Withdraw) error
 }

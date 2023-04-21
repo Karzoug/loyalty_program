@@ -150,7 +150,7 @@ func writeAuthToken(w http.ResponseWriter, login user.Login, secretKey string) e
 
 type balanceResponse struct {
 	Balance   float64 `json:"current"`
-	Withdrawn int     `json:"withdrawn"`
+	Withdrawn float64 `json:"withdrawn"`
 }
 
 func (s *server) getUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
@@ -181,16 +181,16 @@ func (s *server) getUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := s.service.CountUserWithdrawals(ctx, *login)
+	sum, err := s.service.SumUserWithdrawals(ctx, *login)
 	if err != nil {
-		s.logger.Error("Get user balance handler: withdrawals count service error", zap.Error(err))
+		s.logger.Error("Get user balance handler: withdrawals sum service error", zap.Error(err))
 		helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)
 		return
 	}
 
 	balanceResp := balanceResponse{
 		Balance:   (*balance).InexactFloat64(),
-		Withdrawn: count,
+		Withdrawn: sum.InexactFloat64(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

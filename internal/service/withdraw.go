@@ -64,11 +64,11 @@ func (s *Service) ListUserWithdrawals(ctx context.Context, login user.Login) ([]
 	return ws, nil
 }
 
-func (s *Service) CountUserWithdrawals(ctx context.Context, login user.Login) (int, error) {
-	count, err := s.storages.Withdraw().CountByUser(ctx, login)
+func (s *Service) SumUserWithdrawals(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
+	sum, err := s.storages.Withdraw().SumByUser(ctx, login)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return count, nil
+	return sum, nil
 }

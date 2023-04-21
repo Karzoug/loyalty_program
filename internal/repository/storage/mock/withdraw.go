@@ -8,6 +8,7 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/model/withdraw"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
+	"github.com/shopspring/decimal"
 )
 
 var _ storage.Withdraw = (*withdrawStorage)(nil)
@@ -81,6 +82,14 @@ func (s withdrawStorage) CountByUser(ctx context.Context, login user.Login) (int
 		`SELECT COUNT(*) FROM withdrawals WHERE user_login = ?`, login).Scan(&count)
 
 	return count, err
+}
+
+func (s withdrawStorage) SumByUser(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
+	var sum decimal.Decimal
+	err := s.connection().QueryRowContext(ctx,
+		`SELECT SUM(sum) FROM withdrawals WHERE user_login = ?`, login).Scan(&sum)
+
+	return &sum, err
 }
 
 func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {

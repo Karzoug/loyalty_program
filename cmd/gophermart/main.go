@@ -8,8 +8,8 @@ import (
 
 	"github.com/Karzoug/loyalty_program/internal/config"
 	"github.com/Karzoug/loyalty_program/internal/delivery/rest"
-	"github.com/Karzoug/loyalty_program/internal/repository/processor/mock"
-	"github.com/Karzoug/loyalty_program/internal/repository/storage/postgresql"
+	pmock "github.com/Karzoug/loyalty_program/internal/repository/processor/mock"
+	smock "github.com/Karzoug/loyalty_program/internal/repository/storage/mock"
 	"github.com/Karzoug/loyalty_program/internal/service"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -35,12 +35,12 @@ func main() {
 	}
 	defer logger.Sync()
 
-	storages, err := postgresql.NewStorages(ctx, cfg)
+	storages, err := smock.NewStorages(ctx)
 	if err != nil {
 		logger.Fatal("Database error", zap.Error(err))
 	}
 
-	proc := mock.NewOrderProcessor()
+	proc := pmock.NewOrderProcessor()
 
 	service := service.New(storages, proc, logger)
 

@@ -93,11 +93,15 @@ func (s withdrawStorage) CountByUser(ctx context.Context, login user.Login) (int
 }
 
 func (s withdrawStorage) SumByUser(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
-	var sum decimal.Decimal
+	var sum decimal.NullDecimal
 	err := s.connection().QueryRowContext(ctx,
 		`SELECT SUM(sum) FROM withdrawals WHERE user_login = ?`, login).Scan(&sum)
 
-	return &sum, err
+	if !sum.Valid {
+		return &decimal.Zero, nil
+	}
+
+	return &sum.Decimal, err
 }
 
 func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {

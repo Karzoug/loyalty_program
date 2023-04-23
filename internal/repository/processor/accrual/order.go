@@ -43,7 +43,10 @@ var (
 )
 
 // accrual service specific response regexp
-var rateRegExp *regexp.Regexp = regexp.MustCompile("([0-9]+) (?:requests per minute allowed)")
+var (
+	rpmRegExp *regexp.Regexp = regexp.MustCompile("([0-9]+) (?:requests per minute allowed)")
+	rpcRegExp *regexp.Regexp = regexp.MustCompile("([0-9]+) (?:requests per second allowed)")
+)
 
 type orderProcessorConfig interface {
 	AccrualSystemAddress() url.URL
@@ -127,7 +130,7 @@ func (p *orderProcessor) getOrderAccrual(ctx context.Context, number morder.Numb
 		// wait if the number of requests to the service was exceeded (global)
 		<-time.After(time.Until(p.backOffUntil.Load()))
 
-		// wait if our current request limit is exceeded (local)
+		// wait if current request limit is exceeded (local)
 		if err := p.limiter.Wait(ctx); err != nil {
 			return nil, err
 		}
@@ -198,13 +201,13 @@ func (p *orderProcessor) doAttemptRequest(ctx context.Context, attemptNum int, u
 
 // backoff returns the waiting duration until the next request.
 // In the case when the status code is 429/503 trying to get information from the response -
-// RPS and retry after time and set them to the order processor.
+// requests per second and retry after time and set them to the order processor.
 func (p *orderProcessor) backoff(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
 	if resp != nil {
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
 			if s, ok := resp.Header["Retry-After"]; ok {
 				if rps, ok := tryGetLimitFromResponse(resp); ok {
-					p.limiter.SetLimit(rate.Limit(rps)) // set new RPS if possible
+					p.limiter.SetLimit(rate.Limit(rps)) // set new requests per second if possible
 				}
 
 				if sleep, err := strconv.ParseInt(s[0], 10, 64); err == nil {
@@ -226,7 +229,7 @@ func (p *orderProcessor) backoff(min, max time.Duration, attemptNum int, resp *h
 
 }
 
-// tryGetLimitFromResponse tries to find in the server response the allowed maximum number of requests per minute.
+// tryGetLimitFromResponse tries to find in the server response the allowed requests per second.
 func tryGetLimitFromResponse(resp *http.Response) (rps int, ok bool) {
 	if resp.Body == nil {
 		return 0, false
@@ -237,15 +240,23 @@ func tryGetLimitFromResponse(resp *http.Response) (rps int, ok bool) {
 		return 0, false
 	}
 
-	rateStrings := rateRegExp.FindStringSubmatch(string(body))
-	if rateStrings == nil || len(rateStrings) < 2 {
-		return 0, false
+	rpmStrings := rpmRegExp.FindStringSubmatch(string(body))
+	if rpmStrings != nil || len(rpmStrings) >= 2 {
+		rate, err := strconv.Atoi(rpmStrings[1])
+		if err != nil {
+			return 0, false
+		}
+		return 60 * rate, true
 	}
 
-	rate, err := strconv.Atoi(rateStrings[1])
-	if err != nil {
-		return 0, false
+	rpcStrings := rpcRegExp.FindStringSubmatch(string(body))
+	if rpcStrings != nil || len(rpcStrings) >= 2 {
+		rate, err := strconv.Atoi(rpcStrings[1])
+		if err != nil {
+			return 0, false
+		}
+		return rate, true
 	}
 
-	return 60 * rate, true
+	return 0, false
 }

@@ -32,13 +32,14 @@ func (s *Service) processOrder(ctx context.Context, o order.Order) {
 	case <-ctx.Done():
 	}
 
-	// order not found: delete
+	// order not found: delete (?)
 	if errors.Is(result.Err, processor.ErrOrderNotRegistered) {
-		s.logger.Warn("Process order: order not registred in accrual service and will be deleted", zap.Int64("order number", int64(o.Number)))
-		err := s.storages.Order().Delete(ctx, o.Number)
-		if err != nil {
-			s.logger.Error("Process order: order storage: delete order error", zap.Error(err))
-		}
+		s.logger.Warn("Process order: order not registered in accrual service", zap.Int64("order number", int64(o.Number)))
+		//s.logger.Warn("Process order: order not registered in accrual service and will be deleted", zap.Int64("order number", int64(o.Number)))
+		//err := s.storages.Order().Delete(ctx, o.Number)
+		// if err != nil {
+		// 	s.logger.Error("Process order: order storage: delete order error", zap.Error(err))
+		// }
 		return
 	}
 

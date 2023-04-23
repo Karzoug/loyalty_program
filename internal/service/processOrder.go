@@ -128,6 +128,6 @@ func (s *Service) processUnprocessedOrders(ctx context.Context) {
 				return nil
 			})
 		}
-		err = g.Wait()
+		g.Wait()
 	}
 }

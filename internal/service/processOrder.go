@@ -9,12 +9,18 @@ import (
 	"github.com/Karzoug/loyalty_program/internal/repository/processor"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
-const processMaxWaitingDuration = 3 * time.Minute
+const (
+	processUnprocessedOrdersGoroutineLimit = 10
+	processUnprocessedOrdersStorageLimit   = 100
+	processMaxWaitingDuration              = 90 * time.Second
+)
 
-func (s *Service) processOrder(o order.Order) {
-	ctx, cancel := context.WithTimeout(context.Background(), processMaxWaitingDuration)
+// processOrder calls order processor to update status and accrual (if possible).
+func (s *Service) processOrder(ctx context.Context, o order.Order) {
+	ctx, cancel := context.WithTimeout(ctx, processMaxWaitingDuration)
 	defer cancel()
 
 	t1 := time.Now()
@@ -89,5 +95,38 @@ func (s *Service) processOrder(o order.Order) {
 	if err != nil {
 		s.logger.Error("Process order: storages: commit transaction error", zap.Error(err))
 		return
+	}
+}
+
+// processUnprocessedOrders searches for unprocessed orders in the storage and
+// calls order processor to update status and accrual (if possible).
+func (s *Service) processUnprocessedOrders(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		orders, err := s.storages.Order().
+			ListUnprocessed(ctx, processUnprocessedOrdersStorageLimit, 0, time.Now().UTC().Add(-processMaxWaitingDuration))
+		if err != nil {
+			s.logger.Error("Process unprocessed orders: order storage error", zap.Error(err))
+			return
+		}
+		if len(orders) == 0 {
+			return
+		}
+
+		g, _ := errgroup.WithContext(ctx)
+		g.SetLimit(processUnprocessedOrdersGoroutineLimit)
+		for _, o := range orders {
+			o := o
+			g.Go(func() error {
+				s.processOrder(ctx, o)
+				return nil
+			})
+		}
+		err = g.Wait()
 	}
 }

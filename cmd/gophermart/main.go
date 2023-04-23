@@ -55,6 +55,14 @@ func main() {
 		return err
 	})
 
+	g.Go(func() error {
+		err := service.Run(ctx)
+		if err != nil {
+			logger.Error("Service stop failed", zap.Error(err))
+		}
+		return err
+	})
+
 	g.Wait()
 }
 

@@ -33,7 +33,7 @@ func (s *Service) CreateOrder(ctx context.Context, login user.Login, orderNumber
 		return nil, false, err
 	}
 
-	go s.processOrder(*o)
+	go s.processOrder(context.Background(), *o)
 
 	return o, false, nil
 }

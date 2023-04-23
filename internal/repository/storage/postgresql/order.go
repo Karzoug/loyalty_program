@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
@@ -83,6 +84,39 @@ func (s orderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.
 	orders, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (order.Order, error) {
 		order := order.Order{UserLogin: login}
 		err := rows.Scan(&order.Number, &order.Status, &order.Accrual, &order.UploadedAt)
+		return order, err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func (s orderStorage) ListUnprocessed(ctx context.Context, limit, offset int, uploadedEarlierThan time.Time) ([]order.Order, error) {
+	var (
+		rows pgx.Rows
+		err  error
+	)
+
+	if limit == -1 {
+		rows, err = s.connection().Query(ctx, `SELECT number, user_login, status, accrual, uploaded_at FROM orders WHERE status NOT IN ($1, $2) AND uploaded_at < $3 ORDER BY uploaded_at OFFSET $4`, order.StatusInvalid, order.StatusProcessed, uploadedEarlierThan, offset)
+	} else {
+		rows, err = s.connection().Query(ctx, `SELECT number, user_login, status, accrual, uploaded_at FROM orders WHERE status NOT IN ($1, $2) AND uploaded_at < $3 ORDER BY uploaded_at LIMIT $4 OFFSET $5`, order.StatusInvalid, order.StatusProcessed, uploadedEarlierThan, limit, offset)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orders, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (order.Order, error) {
+		var order order.Order
+		err := rows.Scan(&order.Number, &order.UserLogin, &order.Status, &order.Accrual, &order.UploadedAt)
 		return order, err
 	})
 	if err != nil {

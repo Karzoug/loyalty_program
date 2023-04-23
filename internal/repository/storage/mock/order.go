@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+	"time"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
@@ -84,6 +85,40 @@ func (s orderStorage) GetByUser(ctx context.Context, login user.Login) ([]order.
 	for rows.Next() {
 		order := order.Order{UserLogin: login}
 		err := rows.Scan(&order.Number, &order.Status, &order.Accrual, &order.UploadedAt)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, order)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func (s orderStorage) ListUnprocessed(ctx context.Context, limit, offset int, uploadedEarlierThan time.Time) ([]order.Order, error) {
+	var (
+		rows *sql.Rows
+		err  error
+	)
+
+	if limit == -1 {
+		rows, err = s.connection().QueryContext(ctx, `SELECT number, user_login, status, accrual, uploaded_at FROM orders WHERE status NOT IN (?, ?) AND uploaded_at < ? ORDER BY uploaded_at OFFSET ?`, order.StatusInvalid, order.StatusProcessed, uploadedEarlierThan, offset)
+	} else {
+		rows, err = s.connection().QueryContext(ctx, `SELECT number, user_login, status, accrual, uploaded_at FROM orders WHERE status NOT IN (?, ?) AND uploaded_at < ? ORDER BY uploaded_at LIMIT ? OFFSET ?`, order.StatusInvalid, order.StatusProcessed, uploadedEarlierThan, limit, offset)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orders := make([]order.Order, 0)
+	for rows.Next() {
+		var order order.Order
+		err := rows.Scan(&order.Number, &order.UserLogin, &order.Status, &order.Accrual, &order.UploadedAt)
 		if err != nil {
 			return nil, err
 		}

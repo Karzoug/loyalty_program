@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  gophermart-postgres:
+    depends_on: 
+      - migrate
+    build:
+      context: .
+    container_name: gophermart-rest-server
+    ports:
+      - ${RUN_PORT}:${RUN_PORT}
+    environment:
+      - RUN_ADDRESS=:${RUN_PORT}
+      - ACCRUAL_SYSTEM_ADDRESS=http://accrual:${ACCRUAL_PORT}
+      - DATABASE_URI=postgres://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}?sslmode=disable
+      - SECRET_KEY=${SECRET_KEY}
+    deploy:
+      restart_policy:
+        condition: on-failure
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: $PG_DB
+      POSTGRES_USER: $PG_USER
+      POSTGRES_PASSWORD: $PG_PASSWORD
+    ports:
+      - "5432:5432"
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database",  "postgres://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}?sslmode=disable", "up"]
+    links: 
+      - postgres
+    depends_on:
+      - postgres

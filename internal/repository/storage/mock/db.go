@@ -17,7 +17,7 @@ const (
 	duplicateKeyErrorCode = "1555"
 )
 
-// newDBInMemory creates connection to sqlite database in memory. Intended for testing only!
+// newDBInMemory creates connection to sqlite database in memory (for testing purposes only).
 func newDBInMemory(ctx context.Context) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {

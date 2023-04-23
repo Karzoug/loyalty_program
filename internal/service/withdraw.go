@@ -45,6 +45,16 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 
 	err = tx.Withdraw().Create(ctx, *w)
 	if err != nil {
+		if errors.Is(err, storage.ErrRecordAlreadyExists) {
+			existedWithdraw, err := s.storages.Withdraw().Get(ctx, orderNumber)
+			if err != nil {
+				return nil, err
+			}
+			if existedWithdraw.UserLogin != login {
+				return nil, ErrAnotherUserOrderNumber
+			}
+			return existedWithdraw, ErrReAttemptWithdraw
+		}
 		return nil, err
 	}
 

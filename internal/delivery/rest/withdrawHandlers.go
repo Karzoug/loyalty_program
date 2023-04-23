@@ -135,6 +135,8 @@ func (s *server) createWithdrawHandler(w http.ResponseWriter, r *http.Request) {
 			helper.WriteJSONError(w, err.Error(), http.StatusUnprocessableEntity, s.logger)
 		case service.ErrInsufficientBalance:
 			helper.WriteJSONError(w, err.Error(), http.StatusPaymentRequired, s.logger)
+		case service.ErrAnotherUserOrderNumber, service.ErrReAttemptWithdraw:
+			helper.WriteJSONError(w, err.Error(), http.StatusConflict, s.logger)
 		default:
 			s.logger.Error("Create withdraw handler: create withdraw service error", zap.Error(err))
 			helper.WriteJSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError, s.logger)

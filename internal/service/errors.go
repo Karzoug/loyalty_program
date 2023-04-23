@@ -16,4 +16,5 @@ var (
 
 	ErrInvalidOrderNumber     = errors.New("invalid order number")
 	ErrAnotherUserOrderNumber = errors.New("invalid order number: another user's order")
+	ErrReAttemptWithdraw      = errors.New("re-attempt to withdraw")
 )

@@ -27,4 +27,4 @@ EXPOSE $RUN_PORT
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/gophermart"]
+CMD ["/gophermart"]

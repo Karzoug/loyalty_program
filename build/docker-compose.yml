@@ -1,11 +1,13 @@
-version: '3.8'
+version: '3.9'
 
 services:
   gophermart-postgres:
     depends_on: 
       - migrate
+      - accrual
     build:
-      context: .
+      context: ./../
+      dockerfile: ./build/gophermart.Dockerfile
     container_name: gophermart-rest-server
     ports:
       - ${RUN_PORT}:${RUN_PORT}
@@ -17,6 +19,16 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
+  accrual:
+    build:
+      context: ./../
+      dockerfile: ./build/accrual.Dockerfile
+    container_name: accrual-rest-server
+    ports:
+      - ${ACCRUAL_PORT}:${ACCRUAL_PORT}
+    deploy:
+      restart_policy:
+        condition: on-failure
   postgres:
     image: postgres
     environment:
@@ -25,12 +37,18 @@ services:
       POSTGRES_PASSWORD: $PG_PASSWORD
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --dbname ${DATABASE_URI}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   migrate:
     image: migrate/migrate
     volumes:
-      - ./migrations:/migrations
+      - ./../migrations:/migrations
     command: ["-path", "/migrations", "-database",  "postgres://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}?sslmode=disable", "up"]
     links: 
       - postgres
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy

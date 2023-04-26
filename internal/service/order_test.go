@@ -35,9 +35,6 @@ func TestService_CreateOrder(t *testing.T) {
 	orderNumber := generateOrderNumber(t)
 
 	t.Run("positive", func(t *testing.T) {
-		o, err := order.New(orderNumber, login)
-		require.NoError(t, err)
-
 		o, exists, err := service.CreateOrder(ctx, login, orderNumber)
 		require.NoError(t, err)
 		assert.Equal(t, false, exists)
@@ -117,12 +114,15 @@ func TestService_ListUserOrders(t *testing.T) {
 	require.NoError(t, err)
 
 	orders, err := service.ListUserOrders(ctx, login)
+	require.NoError(t, err)
 	assert.Equal(t, 2, len(orders))
 
 	orders, err = service.ListUserOrders(ctx, login2)
+	require.NoError(t, err)
 	require.Equal(t, 1, len(orders))
 	assert.Equal(t, orderNumber, orders[0].Number)
 
 	orders, err = service.ListUserOrders(ctx, login3)
+	require.NoError(t, err)
 	require.Equal(t, 0, len(orders))
 }

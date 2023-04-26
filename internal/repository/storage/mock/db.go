@@ -23,6 +23,7 @@ func newDBInMemory(ctx context.Context) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create db connection: %w", err)
 	}
+	db.SetMaxOpenConns(1)
 
 	d, err := iofs.New(migrations.FS, ".")
 	if err != nil {

@@ -146,3 +146,49 @@ func TestService_SumUserWithdrawals(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ws.RoundBank(4).Equal(withdrawSum.RoundBank(4)))
 }
+
+func TestService_ListUserWithdrawals(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancelCtx := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancelCtx()
+
+	service := newMockServiceWithEmptyProcessor(ctx, t)
+
+	// first user
+	login := user.Login(faker.Username())
+	password := faker.StringWithSize(15)
+	_, err := service.RegisterUser(ctx, login, password)
+	require.NoError(t, err)
+
+	delta := decimal.NewFromFloat(faker.Float64InRange(800, 1000))
+	balance, err := service.storages.User().UpdateBalance(ctx, login, delta)
+	require.NoError(t, err)
+	require.True(t, balance.RoundBank(4).Equal(delta.RoundBank(4)))
+
+	// first user, first withdraw
+	orderNumber := generateOrderNumber(t)
+	withdrawSum1 := decimal.NewFromFloat(faker.Float64InRange(100, 400))
+	_, err = service.CreateWithdraw(ctx, login, orderNumber, withdrawSum1)
+	require.NoError(t, err)
+
+	// first user, second withdraw
+	orderNumber = generateOrderNumber(t)
+	withdrawSum2 := decimal.NewFromFloat(faker.Float64InRange(1, 50))
+	_, err = service.CreateWithdraw(ctx, login, orderNumber, withdrawSum2)
+	require.NoError(t, err)
+
+	// second user
+	login2 := user.Login(faker.Username())
+	password2 := faker.StringWithSize(15)
+	_, err = service.RegisterUser(ctx, login2, password2)
+	require.NoError(t, err)
+
+	ws, err := service.ListUserWithdrawals(ctx, login)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(ws))
+
+	ws, err = service.ListUserWithdrawals(ctx, login2)
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(ws))
+}

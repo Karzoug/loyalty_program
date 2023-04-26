@@ -2,6 +2,7 @@ include ./build/.env
 
 GOPATH=$(shell go env GOPATH)
 
+.PHONY: build
 build:
 	cd cmd/gophermart && go build -buildvcs=false -o gophermart
 

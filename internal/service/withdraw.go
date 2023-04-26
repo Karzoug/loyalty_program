@@ -29,7 +29,11 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if tx != nil {
+			tx.Rollback(ctx)
+		}
+	}()
 
 	result, err := tx.User().UpdateBalance(ctx, login, sum.Neg())
 	if err != nil {
@@ -45,6 +49,11 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 
 	err = tx.Withdraw().Create(ctx, *w)
 	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return nil, err
+		}
+		tx = nil
+
 		if errors.Is(err, storage.ErrRecordAlreadyExists) {
 			existedWithdraw, err := s.storages.Withdraw().Get(ctx, orderNumber)
 			if err != nil {

@@ -1,0 +1,1 @@
+CREATE INDEX orders_unprocessed_index ON orders (uploaded_at) WHERE status NOT IN (2, 3);

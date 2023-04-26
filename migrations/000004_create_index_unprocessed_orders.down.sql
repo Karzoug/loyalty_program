@@ -1,0 +1,1 @@
+DROP INDEX orders_unprocessed_index ON orders; 

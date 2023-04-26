@@ -38,7 +38,6 @@ const (
 )
 
 var (
-	errServerNotRespond    = errors.New("server not respond")
 	errRequestNotSucceeded = errors.New("request not succeeded")
 )
 
@@ -160,7 +159,7 @@ func (p *orderProcessor) getOrderAccrual(ctx context.Context, number morder.Numb
 	}
 
 	if len(body) == 0 {
-		return nil, errServerNotRespond
+		return nil, processor.ErrServerNotRespond
 	}
 
 	var acc orderAccrual

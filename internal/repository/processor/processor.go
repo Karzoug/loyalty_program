@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrOrderNotRegistered = errors.New("order is not registered")
+	ErrServerNotRespond   = errors.New("server not respond")
 )
 
 type AcrualOrderResult struct {

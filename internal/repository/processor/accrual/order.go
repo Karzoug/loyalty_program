@@ -14,7 +14,6 @@ import (
 
 	"time"
 
-	"github.com/Karzoug/loyalty_program/internal/model/order"
 	morder "github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/repository/processor"
 	"github.com/Karzoug/loyalty_program/pkg/e"
@@ -73,7 +72,7 @@ func NewOrderProcessor(cfg orderProcessorConfig, logger *zap.Logger) *orderProce
 }
 
 // Process returns order data from the server.
-func (p *orderProcessor) Process(ctx context.Context, o morder.Order) (*order.Order, error) {
+func (p *orderProcessor) Process(ctx context.Context, o morder.Order) (*morder.Order, error) {
 	p.logger.Debug("Order processor: start order processing", zap.Int64("order number", int64(o.Number)))
 
 	accrual, err := p.getOrderAccrual(ctx, o.Number)

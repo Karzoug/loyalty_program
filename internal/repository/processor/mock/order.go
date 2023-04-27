@@ -4,19 +4,22 @@ import (
 	"context"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
-	"github.com/Karzoug/loyalty_program/internal/repository/processor"
 )
 
 type Order struct {
-	ch chan processor.AcrualOrderResult
+	order *order.Order
+	err   error
 }
 
-func NewOrder(ch chan processor.AcrualOrderResult) *Order {
-	return &Order{
-		ch: ch,
-	}
+func NewOrder() *Order {
+	return &Order{}
 }
 
-func (m *Order) Process(ctx context.Context, o order.Order) <-chan processor.AcrualOrderResult {
-	return m.ch
+func (m *Order) SetResult(o *order.Order, err error) {
+	m.order = o
+	m.err = err
+}
+
+func (m *Order) Process(_ context.Context, _ order.Order) (*order.Order, error) {
+	return m.order, m.err
 }

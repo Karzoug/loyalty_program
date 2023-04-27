@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
+	"github.com/Karzoug/loyalty_program/internal/repository/processor"
 	pmock "github.com/Karzoug/loyalty_program/internal/repository/processor/mock"
 	smock "github.com/Karzoug/loyalty_program/internal/repository/storage/mock"
 	"github.com/Karzoug/loyalty_program/pkg/luhn"
@@ -36,7 +37,8 @@ func newMockServiceWithEmptyProcessor(ctx context.Context, t *testing.T) *Servic
 	storages, err := smock.NewStorages(ctx)
 	require.NoError(t, err)
 
-	proc := pmock.NewOrder(nil)
+	proc := pmock.NewOrder()
+	proc.SetResult(nil, processor.ErrServerNotRespond)
 
 	return New(storages, proc, logger)
 }

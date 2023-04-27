@@ -12,11 +12,6 @@ var (
 	ErrServerNotRespond   = errors.New("server not respond")
 )
 
-type AcrualOrderResult struct {
-	Order *order.Order
-	Err   error
-}
-
 type Order interface {
-	Process(context.Context, order.Order) <-chan AcrualOrderResult
+	Process(context.Context, order.Order) (*order.Order, error)
 }

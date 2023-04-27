@@ -29,8 +29,7 @@ func TestService_processOrder(t *testing.T) {
 	storages, err := smock.NewStorages(ctx)
 	require.NoError(t, err)
 
-	ch := make(chan processor.AcrualOrderResult, 1)
-	proc := pmock.NewOrder(ch)
+	proc := pmock.NewOrder()
 
 	service := New(storages, proc, logger)
 
@@ -53,10 +52,7 @@ func TestService_processOrder(t *testing.T) {
 		procOrder := *o
 		procOrder.Status = order.StatusProcessed
 		procOrder.Accrual = accrual
-		ch <- processor.AcrualOrderResult{
-			Order: &procOrder,
-			Err:   nil,
-		}
+		proc.SetResult(&procOrder, nil)
 		service.processOrder(ctx, *o)
 
 		storageOrder, err := service.storages.Order().Get(ctx, o.Number)
@@ -79,10 +75,7 @@ func TestService_processOrder(t *testing.T) {
 		err = service.storages.Order().Create(ctx, *o)
 		require.NoError(t, err)
 
-		ch <- processor.AcrualOrderResult{
-			Order: o,
-			Err:   processor.ErrServerNotRespond,
-		}
+		proc.SetResult(o, processor.ErrServerNotRespond)
 		service.processOrder(ctx, *o)
 
 		storageOrder, err := service.storages.Order().Get(ctx, o.Number)
@@ -106,10 +99,8 @@ func TestService_processOrder(t *testing.T) {
 		procOrder := *o
 		procOrder.Status = order.StatusProcessed
 		procOrder.Accrual = decimal.NewFromFloat(120)
-		ch <- processor.AcrualOrderResult{
-			Order: &procOrder,
-			Err:   nil,
-		}
+
+		proc.SetResult(&procOrder, nil)
 		service.processOrder(ctx, *o)
 
 		storageOrder, err := service.storages.Order().Get(ctx, o.Number)
@@ -129,10 +120,8 @@ func TestService_processOrder(t *testing.T) {
 
 		procOrder := *o
 		procOrder.Status = order.StatusInvalid
-		ch <- processor.AcrualOrderResult{
-			Order: &procOrder,
-			Err:   nil,
-		}
+
+		proc.SetResult(&procOrder, nil)
 		service.processOrder(ctx, *o)
 
 		storageOrder, err := service.storages.Order().Get(ctx, o.Number)
@@ -152,10 +141,8 @@ func TestService_processOrder(t *testing.T) {
 
 		procOrder := *o
 		procOrder.Status = order.StatusProcessing
-		ch <- processor.AcrualOrderResult{
-			Order: &procOrder,
-			Err:   nil,
-		}
+
+		proc.SetResult(&procOrder, nil)
 		service.processOrder(ctx, *o)
 
 		storageOrder, err := service.storages.Order().Get(ctx, o.Number)

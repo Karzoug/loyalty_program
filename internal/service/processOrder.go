@@ -24,16 +24,10 @@ func (s *Service) processOrder(ctx context.Context, o order.Order) {
 	defer cancel()
 
 	t1 := time.Now()
-	ch := s.orderProcessor.Process(ctx, o)
-
-	var result processor.AcrualOrderResult
-	select {
-	case result = <-ch:
-	case <-ctx.Done():
-	}
+	procOrder, err := s.orderProcessor.Process(ctx, o)
 
 	// order not found: delete (?)
-	if errors.Is(result.Err, processor.ErrOrderNotRegistered) {
+	if errors.Is(err, processor.ErrOrderNotRegistered) {
 		s.logger.Warn("Process order: order not registered in accrual service", zap.Int64("order number", int64(o.Number)))
 		//s.logger.Warn("Process order: order not registered in accrual service and will be deleted", zap.Int64("order number", int64(o.Number)))
 		//err := s.storages.Order().Delete(ctx, o.Number)
@@ -44,7 +38,7 @@ func (s *Service) processOrder(ctx context.Context, o order.Order) {
 	}
 
 	// no result received: process later again
-	if result.Err != nil {
+	if err != nil {
 		s.logger.Warn("Process order: no result received",
 			zap.Int64("order number", int64(o.Number)),
 			zap.Duration("processing time", time.Since(t1)))
@@ -52,7 +46,7 @@ func (s *Service) processOrder(ctx context.Context, o order.Order) {
 	}
 
 	// got the same result as before: process later again
-	if o.Status == result.Order.Status {
+	if o.Status == procOrder.Status {
 		s.logger.Debug("Process order: no new result received, status not changed",
 			zap.Int64("order number", int64(o.Number)),
 			zap.Duration("processing time", time.Since(t1)))
@@ -60,16 +54,16 @@ func (s *Service) processOrder(ctx context.Context, o order.Order) {
 	}
 
 	// order status not 'processed': update only status
-	if result.Order.Status != order.StatusProcessed {
-		err := s.storages.Order().Update(ctx, *result.Order)
+	if procOrder.Status != order.StatusProcessed {
+		err := s.storages.Order().Update(ctx, *procOrder)
 		if err != nil {
 			s.logger.Error("Process order: order storage: update order status error", zap.Error(err))
 		}
 		return
 	}
 
-	if result.Order.Accrual.LessThanOrEqual(decimal.Zero) {
-		s.logger.Error("Process order: got order with negative accrual value", zap.Float64("accrual", result.Order.Accrual.InexactFloat64()))
+	if procOrder.Accrual.LessThanOrEqual(decimal.Zero) {
+		s.logger.Error("Process order: got order with negative accrual value", zap.Float64("accrual", procOrder.Accrual.InexactFloat64()))
 		return
 	}
 
@@ -81,12 +75,12 @@ func (s *Service) processOrder(ctx context.Context, o order.Order) {
 	}
 	defer tx.Rollback(ctx)
 
-	err = tx.Order().Update(ctx, *result.Order)
+	err = tx.Order().Update(ctx, *procOrder)
 	if err != nil {
 		s.logger.Error("Process order: order storage: update order error", zap.Error(err))
 		return
 	}
-	_, err = tx.User().UpdateBalance(ctx, result.Order.UserLogin, result.Order.Accrual)
+	_, err = tx.User().UpdateBalance(ctx, procOrder.UserLogin, procOrder.Accrual)
 	if err != nil {
 		s.logger.Error("Process order: user storage: update user balance error", zap.Error(err))
 		return

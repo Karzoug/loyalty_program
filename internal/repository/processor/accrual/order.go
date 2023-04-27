@@ -14,6 +14,7 @@ import (
 
 	"time"
 
+	"github.com/Karzoug/loyalty_program/internal/model/order"
 	morder "github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/repository/processor"
 	"github.com/Karzoug/loyalty_program/pkg/e"
@@ -72,40 +73,28 @@ func NewOrderProcessor(cfg orderProcessorConfig, logger *zap.Logger) *orderProce
 }
 
 // Process returns order data from the server.
-func (p *orderProcessor) Process(ctx context.Context, o morder.Order) <-chan processor.AcrualOrderResult {
+func (p *orderProcessor) Process(ctx context.Context, o morder.Order) (*order.Order, error) {
 	p.logger.Debug("Order processor: start order processing", zap.Int64("order number", int64(o.Number)))
-	c := make(chan processor.AcrualOrderResult, 1)
-	go func() {
-		defer close(c)
 
-		accrual, err := p.getOrderAccrual(ctx, o.Number)
-		if err != nil {
-			p.logger.Debug("Order processor: accrual service returns error", zap.Int64("order number", int64(o.Number)), zap.Error(err))
-			c <- processor.AcrualOrderResult{
-				Order: nil,
-				Err:   err,
-			}
-			return
-		}
+	accrual, err := p.getOrderAccrual(ctx, o.Number)
+	if err != nil {
+		p.logger.Debug("Order processor: accrual service returns error", zap.Int64("order number", int64(o.Number)), zap.Error(err))
+		return nil, err
+	}
 
-		p.logger.Debug("Order processor: accrual service returns order status", zap.Int64("order number", int64(o.Number)), zap.String("status", accrual.Status))
-		switch accrual.Status {
-		case `REGISTERED`: // TODO: find out the details about this status
-			o.Status = morder.StatusNew
-		case `INVALID`:
-			o.Status = morder.StatusInvalid
-		case `PROCESSING`:
-			o.Status = morder.StatusProcessing
-		case `PROCESSED`:
-			o.Status = morder.StatusProcessed
-			o.Accrual = decimal.NewFromFloat(accrual.Accrual)
-		}
-		c <- processor.AcrualOrderResult{
-			Order: &o,
-			Err:   nil,
-		}
-	}()
-	return c
+	p.logger.Debug("Order processor: accrual service returns order status", zap.Int64("order number", int64(o.Number)), zap.String("status", accrual.Status))
+	switch accrual.Status {
+	case `REGISTERED`: // TODO: find out the details about this status
+		o.Status = morder.StatusNew
+	case `INVALID`:
+		o.Status = morder.StatusInvalid
+	case `PROCESSING`:
+		o.Status = morder.StatusProcessing
+	case `PROCESSED`:
+		o.Status = morder.StatusProcessed
+		o.Accrual = decimal.NewFromFloat(accrual.Accrual)
+	}
+	return &o, nil
 }
 
 type orderAccrual struct {

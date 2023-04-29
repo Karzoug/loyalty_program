@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
@@ -20,11 +21,19 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 		return nil, err
 	}
 
+	// since checks from external services are not required,
+	// we can set the processed time to the current
+	w.ProcessedAt = time.Now().UTC()
+
 	tx, err := s.storages.BeginTx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if tx != nil {
+			tx.Rollback(ctx)
+		}
+	}()
 
 	result, err := tx.User().UpdateBalance(ctx, login, sum.Neg())
 	if err != nil {
@@ -40,6 +49,21 @@ func (s *Service) CreateWithdraw(ctx context.Context, login user.Login, orderNum
 
 	err = tx.Withdraw().Create(ctx, *w)
 	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return nil, err
+		}
+		tx = nil
+
+		if errors.Is(err, storage.ErrRecordAlreadyExists) {
+			existedWithdraw, err := s.storages.Withdraw().Get(ctx, orderNumber)
+			if err != nil {
+				return nil, err
+			}
+			if existedWithdraw.UserLogin != login {
+				return nil, ErrAnotherUserOrderNumber
+			}
+			return existedWithdraw, ErrReAttemptWithdraw
+		}
 		return nil, err
 	}
 
@@ -59,11 +83,11 @@ func (s *Service) ListUserWithdrawals(ctx context.Context, login user.Login) ([]
 	return ws, nil
 }
 
-func (s *Service) CountUserWithdrawals(ctx context.Context, login user.Login) (int, error) {
-	count, err := s.storages.Withdraw().CountByUser(ctx, login)
+func (s *Service) SumUserWithdrawals(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
+	sum, err := s.storages.Withdraw().SumByUser(ctx, login)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return count, nil
+	return sum, nil
 }

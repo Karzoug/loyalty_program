@@ -18,7 +18,7 @@ type storages struct {
 	withdrawStorage storage.Withdraw
 }
 
-// NewStorages returns a mock set of storages for the service to work with data. Intended for testing only!
+// NewStorages returns a mock set of storages for a service to work with data (for testing purposes only).
 func NewStorages(ctx context.Context) (*storages, error) {
 	db, err := newDBInMemory(ctx)
 	if err != nil {

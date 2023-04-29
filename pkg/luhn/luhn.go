@@ -2,12 +2,16 @@ package luhn
 
 // Valid checks a number is valid or not based on Luhn algorithm.
 func Valid[T int64 | int32 | int](number T) bool {
-	quotient := number / 10
 	remainder := number % 10
+	checksum := Checksum(number / 10)
 
+	return (remainder+checksum)%10 == 0
+}
+
+func Checksum[T int64 | int32 | int](number T) T {
 	var luhn T
-	for i := 0; quotient > 0; i++ {
-		cur := quotient % 10
+	for i := 0; number > 0; i++ {
+		cur := number % 10
 
 		if i%2 == 0 {
 			cur = cur * 2
@@ -17,9 +21,7 @@ func Valid[T int64 | int32 | int](number T) bool {
 		}
 
 		luhn += cur
-		quotient = quotient / 10
+		number = number / 10
 	}
-	checksum := luhn % 10
-
-	return (remainder+checksum)%10 == 0
+	return luhn % 10
 }

@@ -37,13 +37,21 @@ func (s userStorage) connection() sqliteConnecter {
 }
 
 func (s userStorage) Create(ctx context.Context, user user.User) error {
-	_, err := s.connection().ExecContext(ctx, `INSERT INTO users(login, encrypted_password, balance) VALUES(?, ?, ?)`,
+	res, err := s.connection().ExecContext(ctx, `INSERT INTO users(login, encrypted_password, balance) VALUES(?, ?, ?)`,
 		user.Login, user.EncryptedPassword, user.Balance)
 	if err != nil {
 		if strings.Contains(err.Error(), duplicateKeyErrorCode) {
 			return storage.ErrRecordAlreadyExists
 		}
 		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return storage.ErrNoRecordAffected
 	}
 
 	return nil

@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"strings"
 
+	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/model/withdraw"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
+	"github.com/shopspring/decimal"
 )
 
 var _ storage.Withdraw = (*withdrawStorage)(nil)
@@ -37,7 +39,7 @@ func (s withdrawStorage) connection() sqliteConnecter {
 }
 
 func (s withdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw) error {
-	_, err := s.connection().ExecContext(ctx, `INSERT INTO withdrawals(order_number, user_login, sum, processed_at) VALUES(?, ?, ?, ?)`,
+	res, err := s.connection().ExecContext(ctx, `INSERT INTO withdrawals(order_number, user_login, sum, processed_at) VALUES(?, ?, ?, ?)`,
 		withdraw.OrderNumber, withdraw.UserLogin, withdraw.Sum, withdraw.ProcessedAt)
 	if err != nil {
 		if strings.Contains(err.Error(), duplicateKeyErrorCode) {
@@ -46,7 +48,30 @@ func (s withdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw)
 		return err
 	}
 
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return storage.ErrNoRecordAffected
+	}
+
 	return nil
+}
+
+func (s withdrawStorage) Get(ctx context.Context, number order.Number) (*withdraw.Withdraw, error) {
+	w := withdraw.Withdraw{OrderNumber: number}
+	err := s.connection().QueryRowContext(ctx,
+		`SELECT sum, processed_at, user_login FROM withdrawals WHERE order_number = ?`, number).
+		Scan(&w.Sum, &w.ProcessedAt, &w.UserLogin)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, storage.ErrRecordNotFound
+		}
+		return nil, err
+	}
+
+	return &w, nil
 }
 
 func (s withdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
@@ -83,15 +108,32 @@ func (s withdrawStorage) CountByUser(ctx context.Context, login user.Login) (int
 	return count, err
 }
 
+func (s withdrawStorage) SumByUser(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
+	var sum decimal.NullDecimal
+	err := s.connection().QueryRowContext(ctx,
+		`SELECT SUM(sum) FROM withdrawals WHERE user_login = ?`, login).Scan(&sum)
+
+	if !sum.Valid {
+		return &decimal.Zero, nil
+	}
+
+	return &sum.Decimal, err
+}
+
 func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {
-	_, err := s.connection().ExecContext(ctx,
+	res, err := s.connection().ExecContext(ctx,
 		`UPDATE withdrawals SET user_login = ?, sum = ?, processed_at = ? WHERE order_number = ?`,
 		withdraw.UserLogin, withdraw.Sum, withdraw.ProcessedAt, withdraw.OrderNumber)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return storage.ErrRecordNotFound
-		}
 		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return storage.ErrNoRecordAffected
 	}
 
 	return nil

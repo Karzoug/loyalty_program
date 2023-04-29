@@ -26,9 +26,9 @@ func NewStorages(ctx context.Context, cfg configPostgreSQLStorage) (*storages, e
 
 	return &storages{
 		pool:            pool,
-		userStorage:     NewUserStorage(pool),
-		orderStorage:    NewOrderStorage(pool),
-		withdrawStorage: NewWithdrawStorage(pool),
+		userStorage:     newUserStorage(pool),
+		orderStorage:    newOrderStorage(pool),
+		withdrawStorage: newWithdrawStorage(pool),
 	}, nil
 }
 

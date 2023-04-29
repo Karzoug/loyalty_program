@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
@@ -19,13 +20,17 @@ type Order interface {
 	Create(context.Context, order.Order) error
 	Get(context.Context, order.Number) (*order.Order, error)
 	GetByUser(context.Context, user.Login) ([]order.Order, error)
+	// ListUnprocessed returns limit (-1 is a special value: no limit) orders not yet processed.
+	ListUnprocessed(ctx context.Context, limit, offset int, uploadedEarlierThan time.Time) ([]order.Order, error)
 	Update(context.Context, order.Order) error
+	Delete(context.Context, order.Number) error
 }
 
 type Withdraw interface {
 	Create(context.Context, withdraw.Withdraw) error
-	//Get(ctx context.Context, orderNumber order.Number) error
+	Get(context.Context, order.Number) (*withdraw.Withdraw, error)
 	GetByUser(context.Context, user.Login) ([]withdraw.Withdraw, error)
 	CountByUser(context.Context, user.Login) (int, error)
+	SumByUser(context.Context, user.Login) (*decimal.Decimal, error)
 	Update(context.Context, withdraw.Withdraw) error
 }

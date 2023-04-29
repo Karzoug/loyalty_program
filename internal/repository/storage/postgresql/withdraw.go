@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Karzoug/loyalty_program/internal/model/order"
 	"github.com/Karzoug/loyalty_program/internal/model/user"
 	"github.com/Karzoug/loyalty_program/internal/model/withdraw"
 	"github.com/Karzoug/loyalty_program/internal/repository/storage"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 )
 
 var _ storage.Withdraw = (*withdrawStorage)(nil)
@@ -19,7 +21,7 @@ type withdrawStorage struct {
 	tx   pgx.Tx
 }
 
-func NewWithdrawStorage(pool *pgxpool.Pool) *withdrawStorage {
+func newWithdrawStorage(pool *pgxpool.Pool) *withdrawStorage {
 	return &withdrawStorage{
 		pool: pool,
 	}
@@ -50,6 +52,21 @@ func (s withdrawStorage) Create(ctx context.Context, withdraw withdraw.Withdraw)
 	}
 
 	return nil
+}
+
+func (s withdrawStorage) Get(ctx context.Context, number order.Number) (*withdraw.Withdraw, error) {
+	w := withdraw.Withdraw{OrderNumber: number}
+	err := s.connection().QueryRow(ctx,
+		`SELECT sum, processed_at, user_login FROM withdrawals WHERE order_number = $1`, number).
+		Scan(&w.Sum, &w.ProcessedAt, &w.UserLogin)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, storage.ErrRecordNotFound
+		}
+		return nil, err
+	}
+
+	return &w, nil
 }
 
 func (s withdrawStorage) GetByUser(ctx context.Context, login user.Login) ([]withdraw.Withdraw, error) {
@@ -83,6 +100,18 @@ func (s withdrawStorage) CountByUser(ctx context.Context, login user.Login) (int
 		`SELECT COUNT(*) FROM withdrawals WHERE user_login = $1`, login).Scan(&count)
 
 	return count, err
+}
+
+func (s withdrawStorage) SumByUser(ctx context.Context, login user.Login) (*decimal.Decimal, error) {
+	var sum decimal.NullDecimal
+	err := s.connection().QueryRow(ctx,
+		`SELECT SUM(sum) FROM withdrawals WHERE user_login = $1`, login).Scan(&sum)
+
+	if !sum.Valid {
+		return &decimal.Zero, nil
+	}
+
+	return &sum.Decimal, err
 }
 
 func (s withdrawStorage) Update(ctx context.Context, withdraw withdraw.Withdraw) error {

@@ -33,7 +33,7 @@ func (s *Service) CreateOrder(ctx context.Context, login user.Login, orderNumber
 		return nil, false, err
 	}
 
-	// TODO: add interaction with the system for calculating bonuses
+	go s.processOrder(context.Background(), *o)
 
 	return o, false, nil
 }

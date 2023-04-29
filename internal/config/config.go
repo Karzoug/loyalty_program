@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"flag"
+	"net"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -10,21 +12,20 @@ import (
 )
 
 const (
-	defaultRunAddress           = ":8080"
-	defaultAccrualSystemAddress = ""
+	defaultRunAddress           = "localhost:8081"
+	defaultAccrualSystemAddress = "http://localhost:8080"
 	defaultDatabaseURI          = ""
 	defaultSecretKey            = ""
 	defaultDebug                = false
-	defaultBrokerURI            = "redis://localhost:6379/"
 )
 
 type config struct {
-	runAddress           string
-	accrualSystemAddress string
-	brokerURI            string
-	databaseURI          string
-	secretKey            string
-	debug                bool
+	runAddress                 string
+	accrualSystemAddressString string
+	accrualSystemAddressURL    url.URL
+	databaseURI                string
+	secretKey                  string
+	debug                      bool
 }
 
 // Read reads config values from (in order of priority): environment values, flags, defaults values.
@@ -42,19 +43,14 @@ func Read() (*config, error) {
 	return &c, nil
 }
 
-// RunAddress is a rest server address and port.
+// RunAddress is a rest server address (host:port).
 func (c config) RunAddress() string {
 	return c.runAddress
 }
 
-// AccrualSystemAddress is an accrual system address and port.
-func (c config) AccrualSystemAddress() string {
-	return c.accrualSystemAddress
-}
-
-// BrokerURI is a broker connection string.
-func (c config) BrokerURI() string {
-	return c.brokerURI
+// AccrualSystemAddress is an accrual system address URL.
+func (c config) AccrualSystemAddress() url.URL {
+	return c.accrualSystemAddressURL
 }
 
 // DatabaseURI is a database connection string.
@@ -76,9 +72,8 @@ func (c *config) readFlags() {
 	if flag.Parsed() {
 		return
 	}
-	flag.StringVar(&c.runAddress, "a", defaultRunAddress, "rest server address and port")
-	flag.StringVar(&c.accrualSystemAddress, "r", defaultAccrualSystemAddress, "accrual system address and port")
-	flag.StringVar(&c.brokerURI, "b", defaultBrokerURI, "message broker connection string")
+	flag.StringVar(&c.runAddress, "a", defaultRunAddress, "rest server host and port")
+	flag.StringVar(&c.accrualSystemAddressString, "r", defaultAccrualSystemAddress, "accrual system address (incl.scheme)")
 	flag.StringVar(&c.databaseURI, "d", defaultDatabaseURI, "database connection string")
 	flag.StringVar(&c.secretKey, "k", defaultSecretKey, "key to create a JWT signature")
 	flag.BoolVar(&c.debug, "debug", defaultDebug, "debug mode")
@@ -91,10 +86,7 @@ func (c *config) readEnvs() error {
 		c.runAddress = runAddressString
 	}
 	if accrualSystemAddressString, ok := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS"); ok {
-		c.accrualSystemAddress = accrualSystemAddressString
-	}
-	if brokerURIString, ok := os.LookupEnv("BROKER_URI"); ok {
-		c.brokerURI = brokerURIString
+		c.accrualSystemAddressString = accrualSystemAddressString
 	}
 	if databaseURIString, ok := os.LookupEnv("DATABASE_URI"); ok {
 		c.databaseURI = databaseURIString
@@ -114,17 +106,16 @@ func (c *config) readEnvs() error {
 }
 
 func (c *config) validate() error {
-	if c.runAddress == "" {
-		return errors.New("rest server address must be non empty")
+	_, _, err := net.SplitHostPort(c.runAddress)
+	if err != nil {
+		return errors.New("rest server host and port have wrong format")
 	}
 
-	if c.accrualSystemAddress == "" {
-		return errors.New("accrual system address must be non empty")
+	u, err := url.ParseRequestURI(c.accrualSystemAddressString)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return errors.New("accrual system address has wrong format")
 	}
-
-	if c.brokerURI == "" {
-		return errors.New("message broker connection string must be non empty")
-	}
+	c.accrualSystemAddressURL = *u
 
 	if c.databaseURI == "" {
 		return errors.New("database connection string must be non empty")

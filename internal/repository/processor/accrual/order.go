@@ -23,8 +23,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var _ processor.Order = (*orderProcessor)(nil)
-
 const (
 	accrualURLPathFmt = "/api/orders/%d"
 	maxAttemptNumber  = 3 // number of attempts to get a response from the server
@@ -38,11 +36,11 @@ const (
 )
 
 var (
-	errRequestNotSucceeded = errors.New("request not succeeded")
-)
+	_ processor.Order = (*orderProcessor)(nil)
 
-// accrual service specific response regexp
-var (
+	errRequestNotSucceeded = errors.New("request not succeeded")
+
+	// accrual service specific response regexp
 	rpmRegExp *regexp.Regexp = regexp.MustCompile("([0-9]+) (?:requests per minute allowed)")
 	rpcRegExp *regexp.Regexp = regexp.MustCompile("([0-9]+) (?:requests per second allowed)")
 )
@@ -81,24 +79,33 @@ func (p *orderProcessor) Process(ctx context.Context, o morder.Order) (*morder.O
 		return nil, err
 	}
 
-	p.logger.Debug("Order processor: accrual service returns order status", zap.Int64("order number", int64(o.Number)), zap.String("status", accrual.Status))
+	p.logger.Debug("Order processor: accrual service returns order status", zap.Int64("order number", int64(o.Number)), zap.String("status", string(accrual.Status)))
 	switch accrual.Status {
-	case `REGISTERED`: // TODO: find out the details about this status
+	case registered: // TODO: find out the details about this status
 		o.Status = morder.StatusNew
-	case `INVALID`:
+	case invalid:
 		o.Status = morder.StatusInvalid
-	case `PROCESSING`:
+	case processing:
 		o.Status = morder.StatusProcessing
-	case `PROCESSED`:
+	case processed:
 		o.Status = morder.StatusProcessed
 		o.Accrual = decimal.NewFromFloat(accrual.Accrual)
 	}
 	return &o, nil
 }
 
+type status string
+
+const (
+	registered status = `REGISTERED`
+	invalid    status = `INVALID`
+	processing status = `PROCESSING`
+	processed  status = `PROCESSED`
+)
+
 type orderAccrual struct {
 	Order   string  `json:"order"`
-	Status  string  `json:"status"`
+	Status  status  `json:"status"`
 	Accrual float64 `json:"accrual,omitempty"`
 }
 
